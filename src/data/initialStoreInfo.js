@@ -1,0 +1,26 @@
+export const initialStoreInfo = {
+  storeName: "FashionYourWay",
+  tagline: "Own the Room. Fashion Designed Your Way.",
+  brandDescription: "FashionYourWay isn't just about what you wear. It's how you make them look twice. From effortless everyday looks to statement pieces that own the room, we bring you fashion designed to match your mood, your confidence and your individuality. No rules. No limit. Just fashion your way.",
+  location: "Plot 24, Lagos Avenue, East Legon",
+  city: "Accra, Ghana",
+  landmark: "Near A&C Mall & Mensvic Grand Hotel",
+  phone: "+233 54 892 4432",
+  whatsapp: "+233 55 901 8822",
+  email: "concierge@fashionyourway.com",
+  orderInquiriesEmail: "orders@fashionyourway.com",
+  workingHours: "Monday – Saturday: 9:00 AM – 8:00 PM (GMT) | Sunday: 12:00 PM – 6:00 PM",
+  socialHandles: {
+    instagram: "fashionyourway_gh",
+    tiktok: "fashionyourway_gh",
+    whatsapp: "+233559018822",
+    facebook: "FashionYourWayGhana",
+    snapchat: "fashionyourway",
+    twitter: "fashionyourway"
+  },
+  currencySymbol: "GH₵",
+  freeShippingThreshold: 800,
+  standardShippingFee: 45,
+  expressShippingFee: 85,
+  noticeBanner: "✨ RUNWAY DROP: Enjoy Complimentary Delivery Across Ghana on Orders Over GH₵ 800 with code 'ACCRAVELVET'"
+};

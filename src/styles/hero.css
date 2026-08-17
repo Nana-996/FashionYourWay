@@ -1,0 +1,204 @@
+/* Hero Section */
+.hero-section {
+  position: relative;
+  min-height: 88vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 60px 0 100px;
+}
+
+.hero-bg-glow {
+  position: absolute;
+  top: 10%;
+  right: 5%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(183, 33, 76, 0.25) 0%, rgba(74, 14, 35, 0.05) 70%, transparent 100%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 60px;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+.hero-tagline-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px;
+  background: rgba(232, 165, 152, 0.12);
+  border: 1px solid rgba(232, 165, 152, 0.3);
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-blush-light);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.hero-title {
+  font-size: clamp(2.8rem, 5.5vw, 4.8rem);
+  line-height: 1.08;
+  margin-bottom: 24px;
+  font-weight: 700;
+}
+
+.hero-title-highlight {
+  background: linear-gradient(135deg, #FCEEF2 0%, #E8A598 50%, #D4AF37 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  font-style: italic;
+}
+
+.hero-statement-box {
+  background: rgba(43, 7, 21, 0.7);
+  border-left: 3px solid var(--color-rose-deep);
+  padding: 20px 24px;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  margin-bottom: 34px;
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(232, 165, 152, 0.1);
+  border-right: 1px solid rgba(232, 165, 152, 0.1);
+  border-bottom: 1px solid rgba(232, 165, 152, 0.1);
+}
+
+.hero-statement-text {
+  font-size: 1.12rem;
+  line-height: 1.68;
+  color: #FFF0F3;
+  font-weight: 400;
+}
+
+.hero-cta-group {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.hero-stats-row {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  margin-top: 48px;
+  padding-top: 30px;
+  border-top: var(--border-subtle);
+}
+
+.hero-stat-item h4 {
+  font-size: 1.8rem;
+  color: var(--color-cream);
+  margin-bottom: 2px;
+}
+
+.hero-stat-item p {
+  font-size: 0.82rem;
+  color: var(--color-blush);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Hero Visual Showcase */
+.hero-visual-container {
+  position: relative;
+}
+
+.hero-main-card {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg), 0 0 50px rgba(135, 32, 70, 0.35);
+  border: 1px solid rgba(232, 165, 152, 0.25);
+  aspect-ratio: 4/5;
+  background: var(--bg-card);
+}
+
+.hero-main-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.hero-main-card:hover .hero-main-img {
+  transform: scale(1.04);
+}
+
+.hero-card-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 30px 24px 24px;
+  background: linear-gradient(0deg, rgba(20, 3, 11, 0.95) 0%, rgba(20, 3, 11, 0.6) 60%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hero-floating-badge {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: rgba(20, 3, 11, 0.85);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-gold-light);
+  font-size: 0.82rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
+}
+
+.hero-floating-pill {
+  position: absolute;
+  bottom: -20px;
+  left: -25px;
+  background: rgba(36, 7, 21, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(232, 165, 152, 0.3);
+  padding: 16px 20px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 3;
+  animation: pulseGlow 4s infinite ease-in-out;
+}
+
+.hero-floating-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-burgundy-light), var(--color-rose-deep));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+}
+
+@media (max-width: 968px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .hero-floating-pill {
+    position: static;
+    margin-top: 16px;
+  }
+}

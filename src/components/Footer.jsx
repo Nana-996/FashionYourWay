@@ -52,7 +52,7 @@ export const Footer = () => {
             </div>
 
             <p className="footer-desc">
-              {storeInfo.brandDescription || "FashionYourWay isn't just about what you wear. It's how you make them look twice. From effortless everyday looks to statement pieces that own the room, we bring you fashion designed to match your mood, your confidence and your individuality. No rules. No limit. Just fashion your way."}
+              Bespoke luxury silhouettes crafted from rich velvets and pure silks. Designed to match your confidence.
             </p>
 
             {/* Clean Platform Logos (No Messy URLs) */}

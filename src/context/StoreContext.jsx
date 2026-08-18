@@ -7,16 +7,16 @@ import confetti from 'canvas-confetti';
 const StoreContext = createContext();
 
 const STORAGE_KEYS = {
-  PRODUCTS: 'fyw_products_v3_gh',
+  PRODUCTS: 'fyw_products_v4_gh',
   STORE_INFO: 'fyw_store_info_v3_gh',
   ORDERS: 'fyw_orders_v3_gh',
   CART: 'fyw_cart_v3_gh',
   WISHLIST: 'fyw_wishlist_v3_gh'
 };
 
-// Cleanse old v1 localStorage keys if present
+// Cleanse old localStorage keys if present
 try {
-  ['fyw_products_v1', 'fyw_store_info_v1', 'fyw_orders_v1', 'fyw_cart_v1', 'fyw_wishlist_v1'].forEach(k => {
+  ['fyw_products_v1', 'fyw_products_v2', 'fyw_products_v3_gh', 'fyw_store_info_v1'].forEach(k => {
     localStorage.removeItem(k);
   });
 } catch (e) {

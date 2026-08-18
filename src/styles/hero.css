@@ -46,9 +46,9 @@
 }
 
 .hero-title {
-  font-size: clamp(2.8rem, 5.5vw, 4.8rem);
+  font-size: clamp(2.8rem, 5.5vw, 4.6rem);
   line-height: 1.08;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
   font-weight: 700;
 }
 
@@ -60,23 +60,13 @@
   font-style: italic;
 }
 
-.hero-statement-box {
-  background: rgba(43, 7, 21, 0.7);
-  border-left: 3px solid var(--color-rose-deep);
-  padding: 20px 24px;
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
-  margin-bottom: 34px;
-  backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(232, 165, 152, 0.1);
-  border-right: 1px solid rgba(232, 165, 152, 0.1);
-  border-bottom: 1px solid rgba(232, 165, 152, 0.1);
-}
-
-.hero-statement-text {
-  font-size: 1.12rem;
-  line-height: 1.68;
-  color: #FFF0F3;
-  font-weight: 400;
+.hero-subtitle {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: rgba(255, 245, 247, 0.85);
+  margin-bottom: 28px;
+  max-width: 520px;
+  font-weight: 300;
 }
 
 .hero-cta-group {
@@ -197,8 +187,67 @@
     grid-template-columns: 1fr;
     gap: 40px;
   }
-  .hero-floating-pill {
-    position: static;
-    margin-top: 16px;
+}
+
+/* Minimal Luxury Brand Strip */
+.brand-strip-section {
+  padding: 18px 0;
+  border-top: 1px solid rgba(232, 165, 152, 0.12);
+  border-bottom: 1px solid rgba(232, 165, 152, 0.12);
+  background: rgba(32, 7, 20, 0.45);
+  backdrop-filter: blur(10px);
+}
+
+.brand-strip-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.brand-strip-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+}
+
+.brand-strip-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 240, 243, 0.05);
+  border: 1px solid rgba(232, 165, 152, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brand-strip-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+  font-family: var(--font-sans);
+}
+
+.brand-strip-desc {
+  font-size: 0.76rem;
+  color: rgba(255, 240, 243, 0.6);
+  line-height: 1.3;
+}
+
+@media (max-width: 900px) {
+  .brand-strip-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 520px) {
+  .brand-strip-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
 }

@@ -17,6 +17,10 @@
   --color-blush: #E8A598;
   --color-blush-light: #F7D6DC;
   --color-cream: #FFF5F7;
+  --color-white: #FFFFFF;
+  --color-pure-white: #FFFFFF;
+  --color-pearl: #FAF9F6;
+  --color-ivory: #FFFFF0;
   --color-gold: #D4AF37;
   --color-gold-light: #F3E5AB;
 
@@ -130,6 +134,9 @@ body {
 
 .color-blush { color: var(--color-blush); }
 .color-cream { color: var(--color-cream); }
+.color-white { color: var(--color-white); }
+.color-pearl { color: var(--color-pearl); }
+.color-ivory { color: var(--color-ivory); }
 .color-gold { color: var(--color-gold); }
 .color-wine { color: var(--color-wine); }
 
@@ -256,6 +263,12 @@ p {
   background: rgba(212, 175, 55, 0.15);
   color: var(--color-gold-light);
   border: 1px solid rgba(212, 175, 55, 0.35);
+}
+
+.badge-white {
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 /* Glass Card */

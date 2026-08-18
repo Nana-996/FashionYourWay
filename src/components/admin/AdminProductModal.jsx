@@ -17,7 +17,7 @@ export const AdminProductModal = ({ productToEdit, onClose }) => {
     tag: 'New In',
     images: [''],
     sizesText: 'XS, S, M, L, XL',
-    colorsText: 'Burgundy Wine (#4A0E23), Blush Rose (#E8A598), Noir (#1F0610)',
+    colorsText: 'Burgundy Wine (#4A0E23), Blush Rose (#E8A598), Pearl White (#FFFFFF), Noir (#1F0610)',
     description: '',
     featuresText: 'Premium mulberry fabric\nTailored fit silhouette\nDry clean only'
   });
@@ -245,7 +245,7 @@ export const AdminProductModal = ({ productToEdit, onClose }) => {
             <label>Color Options (Format: Color Name (#HEX))</label>
             <input
               type="text"
-              placeholder="Deep Burgundy (#4A0E23), Blush Rose (#E8A598)"
+              placeholder="Deep Burgundy (#4A0E23), Blush Rose (#E8A598), Pearl White (#FFFFFF)"
               className="form-input"
               value={formData.colorsText}
               onChange={e => setFormData({ ...formData, colorsText: e.target.value })}

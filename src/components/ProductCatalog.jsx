@@ -26,7 +26,8 @@ export const ProductCatalog = () => {
           !searchQuery.trim() ||
           product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.category?.toLowerCase().includes(searchQuery.toLowerCase());
+          product.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.colors?.some(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
         return matchesCategory && matchesSearch;
       })
       .sort((a, b) => {
@@ -47,19 +48,15 @@ export const ProductCatalog = () => {
         <div className="catalog-header">
           <div className="catalog-title-row">
             <div>
-              <span className="badge badge-burgundy" style={{ marginBottom: '10px' }}>
-                <Sparkles size={13} />
-                <span>The Curated Collection</span>
-              </span>
-              <h2>Signature Wardrobe Pieces</h2>
+              <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.4rem)' }}>The Collection</h2>
             </div>
 
             {/* Search Bar */}
             <div className="catalog-search-bar">
-              <Search size={18} color="#E8A598" />
+              <Search size={16} color="#E8A598" />
               <input
                 type="text"
-                placeholder="Search gowns, blazers, silk..."
+                placeholder="Search pieces, colors, fabrics..."
                 className="catalog-search-input"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
@@ -90,24 +87,23 @@ export const ProductCatalog = () => {
 
           {/* Toolbar */}
           <div className="catalog-toolbar">
-            <div>
-              Showing <strong>{filteredProducts.length}</strong> luxurious designs
-              {selectedCategory !== 'All' && <span> in <em>{selectedCategory}</em></span>}
+            <div style={{ color: 'rgba(255, 240, 243, 0.65)' }}>
+              <strong>{filteredProducts.length}</strong> {filteredProducts.length === 1 ? 'Design' : 'Designs'}
+              {selectedCategory !== 'All' && <span> &middot; {selectedCategory}</span>}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <SlidersHorizontal size={16} color="#E8A598" />
-              <label htmlFor="catalog-sort" style={{ fontSize: '0.85rem' }}>Sort by:</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <SlidersHorizontal size={15} color="#E8A598" />
               <select
                 id="catalog-sort"
                 className="catalog-sort-select"
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value)}
               >
-                <option value="featured">Featured & Best</option>
+                <option value="featured">Featured</option>
                 <option value="price-low">Price: Low to High</option>
                 <option value="price-high">Price: High to Low</option>
-                <option value="rating">Highest Rated</option>
+                <option value="rating">Top Rated</option>
               </select>
             </div>
           </div>

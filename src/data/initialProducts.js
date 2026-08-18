@@ -20,7 +20,8 @@ export const initialProducts = [
     colors: [
       { name: "Deep Burgundy", hex: "#4A0E23" },
       { name: "Velvet Wine", hex: "#6B1736" },
-      { name: "Midnight Rose", hex: "#2E0A17" }
+      { name: "Midnight Rose", hex: "#2E0A17" },
+      { name: "Ivory White", hex: "#FFFFFF" }
     ],
     description: "Designed to demand attention the moment you enter. Handcrafted from heavy mulberry stretch velvet, the Aurelia Gown features an internal boned corset, draped sweetheart neckline, and a sculptural floor-length silhouette. Ideal for red carpets, galas, milestone celebrations, and weddings.",
     features: [
@@ -51,7 +52,8 @@ export const initialProducts = [
     colors: [
       { name: "Burgundy Wine", hex: "#5C132E" },
       { name: "Blush Rose", hex: "#D48B99" },
-      { name: "Noir Plum", hex: "#240511" }
+      { name: "Noir Plum", hex: "#240511" },
+      { name: "Pearl White", hex: "#FAF9F6" }
     ],
     description: "The definition of modern feminine power dressing. Impeccably tailored with padded shoulders, peak lapels, and custom gold-engraved buttons. Moves effortlessly from executive meetings to after-hours cocktails.",
     features: [
@@ -82,7 +84,8 @@ export const initialProducts = [
     colors: [
       { name: "Rose Wine", hex: "#872247" },
       { name: "Champagne Rose", hex: "#F3D5DB" },
-      { name: "Rich Berry", hex: "#4B0920" }
+      { name: "Rich Berry", hex: "#4B0920" },
+      { name: "Pure Silk White", hex: "#FFFFFF" }
     ],
     description: "Effortless sensuality captured in liquid silk. Cut on the bias to drape fluidly along your curves, featuring adjustable micro-straps and an alluring low cowl back.",
     features: [
@@ -112,7 +115,8 @@ export const initialProducts = [
     colors: [
       { name: "Dusty Blush", hex: "#D695A0" },
       { name: "Cabernet", hex: "#4A0C22" },
-      { name: "Onyx Rose", hex: "#1C050D" }
+      { name: "Onyx Rose", hex: "#1C050D" },
+      { name: "Crisp White", hex: "#FFFFFF" }
     ],
     description: "A showstopping layering piece designed to be seen. Features molded underwire cups, flexible boning, and sheer power-mesh contouring panels that cinch and shape seamlessly.",
     features: [
@@ -141,7 +145,8 @@ export const initialProducts = [
     sizes: ["S", "M", "L", "XL"],
     colors: [
       { name: "Imperial Burgundy", hex: "#43091E" },
-      { name: "Blush Camel", hex: "#C88E94" }
+      { name: "Blush Camel", hex: "#C88E94" },
+      { name: "Winter White", hex: "#F5F5F7" }
     ],
     description: "The crowning glory of your wardrobe. Cut from double-faced Australian merino wool and Mongolian cashmere, featuring an exaggerated storm flap, deep pockets, and a wide cinching belt.",
     features: [
@@ -170,7 +175,8 @@ export const initialProducts = [
     sizes: ["One Size"],
     colors: [
       { name: "Burgundy Calfskin", hex: "#520D26" },
-      { name: "Blush Pink", hex: "#E4A7B1" }
+      { name: "Blush Pink", hex: "#E4A7B1" },
+      { name: "Chalk White", hex: "#FFFFFF" }
     ],
     description: "Crafted in Florence from buttery diamond-quilted lambskin. Accented with custom rose-gold hardware, sliding chain strap that adjusts between shoulder and crossbody wear, and multiple internal card slots.",
     features: [
@@ -199,7 +205,8 @@ export const initialProducts = [
     sizes: ["XS", "S", "M", "L"],
     colors: [
       { name: "Berry Wine", hex: "#631032" },
-      { name: "Soft Flamingo Pink", hex: "#E89AA8" }
+      { name: "Soft Flamingo Pink", hex: "#E89AA8" },
+      { name: "Bridal White", hex: "#FFFFFF" }
     ],
     description: "An intoxicating mix of playful glamour and high-fashion luxury. Fitted satin mini silhouette adorned with hand-applied ethical ostrich feathers that sway with every step.",
     features: [
@@ -228,7 +235,8 @@ export const initialProducts = [
     sizes: ["EU 36", "EU 37", "EU 38", "EU 39", "EU 40", "EU 41"],
     colors: [
       { name: "Burgundy Velvet", hex: "#4A0E23" },
-      { name: "Rose Gold Shimmer", hex: "#D69990" }
+      { name: "Rose Gold Shimmer", hex: "#D69990" },
+      { name: "Pearl White Satin", hex: "#FFFFFF" }
     ],
     description: "Step out with unshakeable confidence. Features a razor-sharp pointed toe, sculpted 100mm stiletto heel, cushioned leather insole, and interchangeable satin wrap ribbons.",
     features: [

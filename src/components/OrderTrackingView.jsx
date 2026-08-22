@@ -317,6 +317,11 @@ export const OrderTrackingView = () => {
                     <div style={{ fontSize: '0.78rem', color: '#D4AF37', marginTop: '4px' }}>
                       Method: {selectedOrder.paymentMethod}
                     </div>
+                    {selectedOrder.paymentReference && (
+                      <div style={{ fontSize: '0.76rem', color: '#86EFAC', background: 'rgba(34, 197, 94, 0.12)', border: '1px solid rgba(34, 197, 94, 0.25)', padding: '6px 10px', borderRadius: '6px', marginTop: '4px', wordBreak: 'break-all' }}>
+                        ⚡ <strong>Paystack Ref:</strong> {selectedOrder.paymentReference}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

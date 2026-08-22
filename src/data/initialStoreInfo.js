@@ -22,5 +22,22 @@ export const initialStoreInfo = {
   freeShippingThreshold: 800,
   standardShippingFee: 45,
   expressShippingFee: 85,
-  noticeBanner: "✨ RUNWAY DROP: Enjoy Complimentary Delivery Across Ghana on Orders Over GH₵ 800 with code 'ACCRAVELVET'"
+  noticeBanner: "✨ RUNWAY DROP: Enjoy Complimentary Delivery Across Ghana on Orders Over GH₵ 800 with code 'ACCRAVELVET'",
+  // Paystack Live Payment Gateway Integration
+  paystackPublicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || '',
+  paystackSecretKey: '',
+  paystackEnabled: true,
+  paystackMode: 'live',
+  // Logo & Visual Identity Configuration
+  logoUrl: null,
+  logoType: 'preset',
+  logoPreset: 'crown',
+  logoHeight: 44,
+  logoScale: 100,
+  logoPadding: 4,
+  logoShape: 'circle',
+  logoFilter: 'none',
+  logoBgColor: 'glass',
+  logoDisplayMode: 'both',
+  logoLayout: 'horizontal'
 };

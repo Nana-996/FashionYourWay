@@ -52,7 +52,15 @@ export const StoreProvider = ({ children }) => {
         if (parsed.noticeBanner && parsed.noticeBanner.includes('$')) {
           parsed.noticeBanner = parsed.noticeBanner.replace(/\$/g, 'GH₵ ');
         }
-        return { ...initialStoreInfo, ...parsed, currencySymbol: 'GH₵' };
+        return {
+          ...initialStoreInfo,
+          ...parsed,
+          currencySymbol: 'GH₵',
+          paystackPublicKey: parsed.paystackPublicKey || initialStoreInfo.paystackPublicKey,
+          paystackSecretKey: parsed.paystackSecretKey || initialStoreInfo.paystackSecretKey,
+          paystackEnabled: parsed.paystackEnabled ?? initialStoreInfo.paystackEnabled,
+          paystackMode: parsed.paystackMode || initialStoreInfo.paystackMode
+        };
       }
       return initialStoreInfo;
     } catch {
@@ -296,6 +304,12 @@ export const StoreProvider = ({ children }) => {
 
     const total = cartSubtotal + shippingFee;
 
+    const isPaid = orderData.paymentStatus === 'Paid' || !!orderData.paymentReference;
+    const initialStatus = isPaid ? 'Confirmed' : 'Pending';
+    const statusNote = orderData.paymentReference
+      ? `Payment verified via Paystack (Ref: ${orderData.paymentReference}). Order confirmed.`
+      : 'Order successfully placed online.';
+
     const newOrder = {
       id: orderId,
       customerName: orderData.customerName,
@@ -306,14 +320,18 @@ export const StoreProvider = ({ children }) => {
       region: orderData.region || 'Greater Accra',
       landmark: orderData.landmark || '',
       country: 'Ghana',
-      paymentMethod: orderData.paymentMethod || 'Mobile Money (MTN MoMo / Telecel)',
+      paymentMethod: orderData.paymentMethod || 'Paystack (MTN MoMo / Telecel / Card)',
+      paymentStatus: isPaid ? 'Paid' : 'Pending',
+      paymentReference: orderData.paymentReference || null,
+      paymentGateway: orderData.paymentGateway || (orderData.paymentReference ? 'Paystack' : 'Manual'),
+      paidAt: isPaid ? nowIso : null,
       orderDate: nowIso,
-      status: 'Pending',
+      status: initialStatus,
       statusHistory: [
         {
-          status: 'Pending',
+          status: initialStatus,
           timestamp: nowIso,
-          note: 'Order successfully placed online.'
+          note: statusNote
         }
       ],
       items: cart.map(item => ({
@@ -330,7 +348,7 @@ export const StoreProvider = ({ children }) => {
       discountAmount: 0,
       total,
       trackingNumber: `GH-EXP-${Math.floor(1000000 + Math.random() * 9000000)}`,
-      adminNotes: '',
+      adminNotes: orderData.paymentReference ? `Paystack Ref: ${orderData.paymentReference}` : '',
       customerNotes: orderData.customerNotes || ''
     };
 

@@ -13,7 +13,11 @@ import {
   KeyRound,
   CheckCircle2,
   ExternalLink,
-  Share2
+  Share2,
+  Zap,
+  ShieldCheck,
+  CreditCard,
+  EyeOff
 } from 'lucide-react';
 
 export const AdminStoreSettings = () => {
@@ -43,6 +47,10 @@ export const AdminStoreSettings = () => {
     standardShippingFee: storeInfo.standardShippingFee ?? 45,
     expressShippingFee: storeInfo.expressShippingFee ?? 85,
     freeShippingThreshold: storeInfo.freeShippingThreshold ?? 800,
+    paystackPublicKey: storeInfo.paystackPublicKey || import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || '',
+    paystackSecretKey: storeInfo.paystackSecretKey || '',
+    paystackEnabled: storeInfo.paystackEnabled ?? true,
+    paystackMode: storeInfo.paystackMode || 'live',
     socialHandles: {
       instagram: storeInfo.socialHandles?.instagram || storeInfo.instagram || 'fashionyourway_gh',
       tiktok: storeInfo.socialHandles?.tiktok || 'fashionyourway_gh',
@@ -55,6 +63,7 @@ export const AdminStoreSettings = () => {
 
   const [newPasskeyInput, setNewPasskeyInput] = useState('');
   const [showSavedNotification, setShowSavedNotification] = useState(false);
+  const [showSecretKey, setShowSecretKey] = useState(false);
 
   const handleChange = (field, val) => {
     setFormData(prev => ({ ...prev, [field]: val }));
@@ -421,7 +430,103 @@ export const AdminStoreSettings = () => {
             />
           </div>
 
-          {/* Section 5: Admin Privacy & Security Passkey */}
+          {/* Section 5: Paystack Live Payment Gateway Integration */}
+          <div className="form-grid-full" style={{ marginTop: '16px' }}>
+            <div className="admin-settings-section-title">
+              <Zap size={18} color="#FDE047" />
+              <span>Paystack Payment Gateway (Ghana MoMo, Telecel & Cards)</span>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: 'rgba(255,240,243,0.7)', marginTop: '-12px', marginBottom: '14px' }}>
+              Connected to Paystack Live API for automated payment processing in Ghana Cedis (GH₵). Customer payments trigger instant automated order confirmation.
+            </p>
+          </div>
+
+          <div className="form-group">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label style={{ margin: 0 }}>Paystack Live Public Key *</label>
+              <span className="badge badge-blush" style={{ fontSize: '0.7rem' }}>Client Safe</span>
+            </div>
+            <input
+              type="text"
+              required
+              placeholder="pk_live_..."
+              className="form-input"
+              value={formData.paystackPublicKey}
+              onChange={e => handleChange('paystackPublicKey', e.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label style={{ margin: 0 }}>Paystack Live Secret Key</label>
+              <button
+                type="button"
+                onClick={() => setShowSecretKey(prev => !prev)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#E8A598',
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                {showSecretKey ? <EyeOff size={13} /> : <Eye size={13} />}
+                <span>{showSecretKey ? 'Hide' : 'Reveal'}</span>
+              </button>
+            </div>
+            <input
+              type={showSecretKey ? 'text' : 'password'}
+              placeholder="sk_live_..."
+              className="form-input"
+              value={formData.paystackSecretKey}
+              onChange={e => handleChange('paystackSecretKey', e.target.value)}
+            />
+          </div>
+
+          <div className="form-group form-grid-full">
+            <div
+              style={{
+                background: 'rgba(34, 197, 94, 0.1)',
+                border: '1px solid rgba(34, 197, 94, 0.3)',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '10px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <ShieldCheck size={20} color="#86EFAC" />
+                <div>
+                  <div style={{ fontWeight: 600, color: '#86EFAC', fontSize: '0.88rem' }}>
+                    Paystack Live Gateway Connected
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'rgba(255, 240, 243, 0.7)' }}>
+                    Currency: Ghana Cedis (GHS) &middot; Channels: MTN MoMo, Telecel Cash, Visa, Mastercard, Apple Pay
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <label style={{ fontSize: '0.82rem', color: '#FFFFFF', margin: 0 }}>
+                  Enable Instant Paystack Checkout:
+                </label>
+                <input
+                  type="checkbox"
+                  checked={formData.paystackEnabled}
+                  onChange={e => handleChange('paystackEnabled', e.target.checked)}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#E8A598' }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 6: Admin Privacy & Security Passkey */}
           <div className="form-grid-full" style={{ marginTop: '16px' }}>
             <div className="admin-settings-section-title">
               <KeyRound size={18} color="#D4AF37" />

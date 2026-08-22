@@ -1,6 +1,21 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
-import { X, ShieldCheck, Smartphone, Landmark, Truck, Check, ArrowRight, ArrowLeft, Lock, MapPin } from 'lucide-react';
+import { payWithPaystack } from '../utils/paystack';
+import {
+  X,
+  ShieldCheck,
+  Smartphone,
+  Landmark,
+  Truck,
+  Check,
+  ArrowRight,
+  ArrowLeft,
+  Lock,
+  MapPin,
+  CreditCard,
+  Zap,
+  Loader2
+} from 'lucide-react';
 
 export const CheckoutModal = () => {
   const {
@@ -12,10 +27,12 @@ export const CheckoutModal = () => {
     placeOrder,
     setCurrentView,
     setTrackQuery,
-    formatCurrency
+    formatCurrency,
+    showToast
   } = useStore();
 
   const [step, setStep] = useState(1);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
     customerEmail: '',
@@ -25,7 +42,7 @@ export const CheckoutModal = () => {
     region: 'Greater Accra Region',
     landmark: '',
     shippingType: 'standard', // 'standard' | 'express'
-    paymentMethod: 'Mobile Money (MTN MoMo / Telecel)',
+    paymentMethod: 'Paystack (Instant MoMo & Cards)',
     customerNotes: '',
     momoNetwork: 'MTN Mobile Money',
     momoNumber: ''
@@ -68,8 +85,58 @@ export const CheckoutModal = () => {
   };
 
   const handleSubmitOrder = (e) => {
-    e.preventDefault();
-    const createdOrder = placeOrder(formData);
+    if (e) e.preventDefault();
+
+    // If Paystack is selected, launch Paystack Inline Popup
+    if (formData.paymentMethod.startsWith('Paystack')) {
+      setIsProcessingPayment(true);
+      const paystackKey = storeInfo.paystackPublicKey || import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_live_a26e85b3fef0ef53ad3e564547c2a77f12b3bcf4';
+
+      payWithPaystack({
+        key: paystackKey,
+        email: formData.customerEmail,
+        amount: finalTotal,
+        currency: 'GHS',
+        metadata: {
+          customerName: formData.customerName,
+          customerPhone: formData.customerPhone,
+          shippingAddress: formData.shippingAddress,
+          city: formData.city,
+          region: formData.region,
+          shippingType: formData.shippingType
+        },
+        onSuccess: (response) => {
+          setIsProcessingPayment(false);
+          const createdOrder = placeOrder({
+            ...formData,
+            paymentMethod: 'Paystack (MTN MoMo / Telecel / Card)',
+            paymentStatus: 'Paid',
+            paymentReference: response.reference,
+            paymentGateway: 'Paystack'
+          });
+          if (createdOrder) {
+            setTrackQuery(createdOrder.id);
+            setCurrentView('track');
+          }
+        },
+        onClose: () => {
+          setIsProcessingPayment(false);
+          showToast('Payment Cancelled', 'You can retry or select another payment option.', 'info');
+        },
+        onError: (err) => {
+          setIsProcessingPayment(false);
+          showToast('Payment Error', err.message || 'Could not connect to Paystack gateway.', 'error');
+        }
+      });
+      return;
+    }
+
+    // Manual payment methods (MoMo manual, COD, Wire)
+    const createdOrder = placeOrder({
+      ...formData,
+      paymentStatus: 'Pending',
+      paymentGateway: 'Manual'
+    });
     if (createdOrder) {
       setTrackQuery(createdOrder.id);
       setCurrentView('track');
@@ -267,23 +334,55 @@ export const CheckoutModal = () => {
 
             {/* Ghanaian Payment Method */}
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ fontSize: '0.88rem', fontWeight: 600, color: '#E8A598', display: 'block', marginBottom: '10px' }}>
-                Payment Method (Ghana)
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <label style={{ fontSize: '0.88rem', fontWeight: 600, color: '#E8A598', display: 'block', margin: 0 }}>
+                  Select Payment Method
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: '#86EFAC' }}>
+                  <ShieldCheck size={14} />
+                  <span>256-bit Secure Gateway</span>
+                </div>
+              </div>
+
               <div className="payment-methods-grid">
+                {/* 1. Paystack Primary Option */}
                 <div
-                  className={`payment-method-card ${formData.paymentMethod === 'Mobile Money (MTN MoMo / Telecel)' ? 'active' : ''}`}
-                  onClick={() => handleInputChange('paymentMethod', 'Mobile Money (MTN MoMo / Telecel)')}
+                  className={`payment-method-card ${formData.paymentMethod.startsWith('Paystack') ? 'active' : ''}`}
+                  onClick={() => handleInputChange('paymentMethod', 'Paystack (Instant MoMo & Cards)')}
+                  style={{
+                    borderColor: formData.paymentMethod.startsWith('Paystack') ? '#E8A598' : 'rgba(232, 165, 152, 0.2)',
+                    background: formData.paymentMethod.startsWith('Paystack') ? 'rgba(179, 61, 98, 0.22)' : 'rgba(20, 3, 11, 0.4)'
+                  }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
-                    <Smartphone size={18} color="#FDE047" />
-                    <span>Mobile Money (MoMo / Telecel)</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Zap size={18} color="#FDE047" />
+                      <span>Paystack (MoMo & Card)</span>
+                    </div>
+                    <span className="badge badge-burgundy" style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                      ⚡ Instant Verification
+                    </span>
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'rgba(255, 240, 243, 0.7)' }}>
-                    Direct prompt to your phone or merchant transfer
+                  <div style={{ fontSize: '0.78rem', color: 'rgba(255, 240, 243, 0.75)', marginTop: '4px' }}>
+                    MTN MoMo, Telecel Cash, Visa, Mastercard & Apple Pay. Instant receipt & immediate fulfillment.
                   </div>
                 </div>
 
+                {/* 2. Manual Mobile Money */}
+                <div
+                  className={`payment-method-card ${formData.paymentMethod === 'Mobile Money (Manual Merchant Transfer)' ? 'active' : ''}`}
+                  onClick={() => handleInputChange('paymentMethod', 'Mobile Money (Manual Merchant Transfer)')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+                    <Smartphone size={18} color="#E8A598" />
+                    <span>Manual Mobile Money Transfer</span>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'rgba(255, 240, 243, 0.7)' }}>
+                    Transfer directly to store MoMo number ({storeInfo.whatsapp || '+233 55 901 8822'})
+                  </div>
+                </div>
+
+                {/* 3. Direct Bank Transfer */}
                 <div
                   className={`payment-method-card ${formData.paymentMethod === 'Direct Bank Transfer' ? 'active' : ''}`}
                   onClick={() => handleInputChange('paymentMethod', 'Direct Bank Transfer')}
@@ -297,13 +396,14 @@ export const CheckoutModal = () => {
                   </div>
                 </div>
 
+                {/* 4. Cash on Delivery */}
                 <div
                   className={`payment-method-card ${formData.paymentMethod === 'Cash on Delivery' ? 'active' : ''}`}
                   onClick={() => handleInputChange('paymentMethod', 'Cash on Delivery')}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
                     <Truck size={18} color="#86EFAC" />
-                    <span>Cash on Delivery</span>
+                    <span>Cash on Delivery (Accra Only)</span>
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'rgba(255, 240, 243, 0.7)' }}>
                     Pay rider upon receipt and inspection of package
@@ -354,14 +454,37 @@ export const CheckoutModal = () => {
 
             {/* Navigation Actions */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <button className="btn btn-secondary btn-sm" onClick={() => setStep(1)}>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => setStep(1)}
+                disabled={isProcessingPayment}
+              >
                 <ArrowLeft size={16} />
                 <span>Back</span>
               </button>
 
-              <button className="btn btn-primary" onClick={handleSubmitOrder} style={{ gap: '10px' }}>
-                <Lock size={16} />
-                <span>Complete Order &middot; {formatCurrency(finalTotal)}</span>
+              <button
+                className="btn btn-primary"
+                onClick={handleSubmitOrder}
+                disabled={isProcessingPayment}
+                style={{ gap: '10px', minWidth: '220px' }}
+              >
+                {isProcessingPayment ? (
+                  <>
+                    <Loader2 size={16} className="spin" />
+                    <span>Connecting Paystack...</span>
+                  </>
+                ) : formData.paymentMethod.startsWith('Paystack') ? (
+                  <>
+                    <Zap size={16} color="#FDE047" />
+                    <span>Pay with Paystack &middot; {formatCurrency(finalTotal)}</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock size={16} />
+                    <span>Place Order &middot; {formatCurrency(finalTotal)}</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

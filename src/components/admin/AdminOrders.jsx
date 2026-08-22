@@ -119,8 +119,17 @@ export const AdminOrders = () => {
                   </td>
                   <td>
                     <div style={{ fontWeight: 700, color: '#FFFFFF' }}>{formatCurrency(ord.total)}</div>
-                    <div style={{ fontSize: '0.78rem', color: '#E8A598' }}>
-                      {ord.items.length} item{ord.items.length > 1 ? 's' : ''} ({ord.paymentMethod})
+                    <div style={{ fontSize: '0.78rem', color: '#E8A598', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', marginTop: '2px' }}>
+                      <span>{ord.items.length} item{ord.items.length > 1 ? 's' : ''}</span>
+                      {ord.paymentReference ? (
+                        <span className="badge badge-burgundy" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>
+                          ⚡ Paid (Paystack)
+                        </span>
+                      ) : ord.paymentStatus === 'Paid' ? (
+                        <span className="badge badge-burgundy" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>
+                          Paid
+                        </span>
+                      ) : null}
                     </div>
                   </td>
                   <td>
@@ -231,8 +240,18 @@ export const AdminOrders = () => {
                 <div style={{ fontSize: '0.88rem', color: '#FFFFFF' }}>
                   <strong>Payment:</strong> {activeOrderModal.paymentMethod}
                 </div>
+                {activeOrderModal.paymentReference && (
+                  <div style={{ fontSize: '0.82rem', color: '#86EFAC', marginTop: '4px', wordBreak: 'break-all' }}>
+                    <strong>Paystack Ref:</strong> {activeOrderModal.paymentReference}
+                  </div>
+                )}
                 <div style={{ fontSize: '0.88rem', color: '#FFFFFF', marginTop: '6px' }}>
                   <strong>Tracking ID:</strong> {activeOrderModal.trackingNumber || 'Pending Dispatch'}
+                </div>
+                <div style={{ marginTop: '6px' }}>
+                  <span className={`badge ${activeOrderModal.paymentStatus === 'Paid' ? 'badge-burgundy' : 'badge-blush'}`} style={{ fontSize: '0.72rem' }}>
+                    Status: {activeOrderModal.paymentStatus || 'Pending'}
+                  </span>
                 </div>
                 {activeOrderModal.customerNotes && (
                   <div style={{ marginTop: '10px', fontSize: '0.82rem', color: 'rgba(255,240,243,0.8)' }}>

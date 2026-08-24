@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
+import { BrandLogo } from './BrandLogo';
 import { payWithPaystack } from '../utils/paystack';
 import {
   X,
@@ -155,16 +156,19 @@ export const CheckoutModal = () => {
           <X size={20} />
         </button>
 
-        {/* Stepper Header */}
-        <div className="checkout-stepper">
-          <div className={`checkout-step-indicator ${step >= 1 ? 'active' : ''}`}>
-            <span className="checkout-step-number">1</span>
-            <span>Delivery Info</span>
-          </div>
-          <div style={{ width: '30px', height: '1px', background: 'rgba(232, 165, 152, 0.2)' }} />
-          <div className={`checkout-step-indicator ${step >= 2 ? 'active' : ''}`}>
-            <span className="checkout-step-number">2</span>
-            <span>Payment & Review</span>
+        {/* Stepper Header with Brand Logo */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+          <BrandLogo size="xs" showSub={false} />
+          <div className="checkout-stepper" style={{ margin: 0 }}>
+            <div className={`checkout-step-indicator ${step >= 1 ? 'active' : ''}`}>
+              <span className="checkout-step-number">1</span>
+              <span>Delivery</span>
+            </div>
+            <div style={{ width: '20px', height: '1px', background: 'rgba(232, 165, 152, 0.2)' }} />
+            <div className={`checkout-step-indicator ${step >= 2 ? 'active' : ''}`}>
+              <span className="checkout-step-number">2</span>
+              <span>Payment</span>
+            </div>
           </div>
         </div>
 

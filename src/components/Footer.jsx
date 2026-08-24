@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { MapPin, Phone, Mail, Clock, Send, Heart, Sparkles, MessageSquare } from 'lucide-react';
 import { SocialMediaBar } from './SocialIcons';
+import { BrandLogo } from './BrandLogo';
 
 export const Footer = () => {
   const { storeInfo, setCurrentView, isAdminAuthenticated, setIsAdminLoginModalOpen } = useStore();
@@ -46,10 +47,7 @@ export const Footer = () => {
         <div className="footer-grid">
           {/* Brand & Manifesto Column */}
           <div className="footer-brand-col">
-            <div className="brand-logo" onClick={() => handleNav('storefront')}>
-              <span className="brand-name">{storeInfo.storeName || 'FashionYourWay'}</span>
-              <span className="brand-sub">LUXURY ATELIER</span>
-            </div>
+            <BrandLogo size="lg" onClick={() => handleNav('storefront')} />
 
             <p className="footer-desc">
               Bespoke luxury silhouettes crafted from rich velvets and pure silks. Designed to match your confidence.

@@ -3,6 +3,8 @@ import { useStore } from '../../context/StoreContext';
 import { AdminOrders } from './AdminOrders';
 import { AdminProducts } from './AdminProducts';
 import { AdminStoreSettings } from './AdminStoreSettings';
+import { AdminLogoStudio } from './AdminLogoStudio';
+import { BrandLogo } from '../BrandLogo';
 import {
   ShoppingBag,
   Package,
@@ -13,7 +15,8 @@ import {
   Eye,
   Store,
   Layers,
-  Lock
+  Lock,
+  Sparkles
 } from 'lucide-react';
 
 export const AdminDashboard = () => {
@@ -40,12 +43,12 @@ export const AdminDashboard = () => {
         {/* Admin Header */}
         <div className="admin-header-row">
           <div className="admin-header-title">
-            <h1>
-              <ShieldCheck size={32} color="#D4AF37" />
-              <span>FashionYourWay Executive Admin</span>
-            </h1>
-            <p style={{ color: 'rgba(255, 240, 243, 0.7)', marginTop: '4px' }}>
-              Private management portal for Customer Orders, Catalog Inventory, and Boutique Details.
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+              <BrandLogo size="md" showSub={false} />
+              <span className="admin-header-badge">Executive Admin Portal</span>
+            </div>
+            <p style={{ color: 'rgba(255, 240, 243, 0.7)', marginTop: '6px' }}>
+              Private management portal for Customer Orders, Catalog Inventory, Visual Branding & Boutique Settings.
             </p>
           </div>
 
@@ -161,11 +164,19 @@ export const AdminDashboard = () => {
           </button>
 
           <button
+            className={`admin-tab-btn ${activeAdminTab === 'logo' ? 'active' : ''}`}
+            onClick={() => setActiveAdminTab('logo')}
+          >
+            <Sparkles size={18} />
+            <span>Brand Logo & Emblem Studio</span>
+          </button>
+
+          <button
             className={`admin-tab-btn ${activeAdminTab === 'settings' ? 'active' : ''}`}
             onClick={() => setActiveAdminTab('settings')}
           >
             <Settings size={18} />
-            <span>Store Profile, Location & Phone</span>
+            <span>Store Profile, Location & Contacts</span>
           </button>
         </div>
 
@@ -173,6 +184,7 @@ export const AdminDashboard = () => {
         <div className="admin-tab-content">
           {activeAdminTab === 'orders' && <AdminOrders />}
           {activeAdminTab === 'products' && <AdminProducts />}
+          {activeAdminTab === 'logo' && <AdminLogoStudio />}
           {activeAdminTab === 'settings' && <AdminStoreSettings />}
         </div>
       </div>

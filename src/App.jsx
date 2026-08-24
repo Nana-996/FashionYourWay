@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
@@ -12,9 +12,14 @@ import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AdminLoginModal } from './components/admin/AdminLoginModal';
 import { Footer } from './components/Footer';
 import { ToastContainer } from './components/Toast';
+import { updateBrowserFavicon } from './utils/logoAdapter';
 
 const MainAppContent = () => {
-  const { currentView, isAdminAuthenticated, setIsAdminLoginModalOpen } = useStore();
+  const { currentView, isAdminAuthenticated, setIsAdminLoginModalOpen, storeInfo } = useStore();
+
+  useEffect(() => {
+    updateBrowserFavicon(storeInfo.logoUrl, storeInfo.storeName);
+  }, [storeInfo.logoUrl, storeInfo.storeName]);
 
   return (
     <div className="app-layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>

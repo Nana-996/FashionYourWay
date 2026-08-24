@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
+import { BrandLogo } from './BrandLogo';
 import { ShoppingBag, Search, Sparkles, ShieldCheck, Truck, Menu, X, Heart } from 'lucide-react';
 
 export const Navbar = () => {
@@ -52,11 +53,11 @@ export const Navbar = () => {
       {/* Main Navbar */}
       <header className="navbar">
         <div className="container navbar-container">
-          {/* Logo */}
-          <div className="brand-logo" onClick={() => handleNavClick('storefront')}>
-            <span className="brand-name">{storeInfo.storeName || 'FashionYourWay'}</span>
-            <span className="brand-sub">HAUTE COUTURE & READY-TO-WEAR</span>
-          </div>
+          {/* Logo with dynamic branding */}
+          <BrandLogo
+            onClick={() => handleNavClick('storefront')}
+            className="navbar-brand-clickable"
+          />
 
           {/* Desktop Navigation Links */}
           <nav className="nav-links">
@@ -138,6 +139,10 @@ export const Navbar = () => {
               animation: 'fadeIn 0.2s ease'
             }}
           >
+            <div style={{ paddingBottom: '12px', borderBottom: '1px solid rgba(232, 165, 152, 0.15)' }}>
+              <BrandLogo size="sm" showSub={false} onClick={() => handleNavClick('storefront')} />
+            </div>
+
             <button
               className="nav-link-btn"
               style={{ textAlign: 'left', fontSize: '1.05rem' }}

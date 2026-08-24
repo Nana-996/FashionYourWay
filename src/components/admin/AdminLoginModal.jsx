@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
+import { BrandLogo } from '../BrandLogo';
 import { Lock, ShieldCheck, X, KeyRound, ArrowRight } from 'lucide-react';
 
 export const AdminLoginModal = () => {
@@ -48,29 +49,16 @@ export const AdminLoginModal = () => {
           <X size={20} />
         </button>
 
-        <div
-          style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '50%',
-            background: 'rgba(212, 175, 55, 0.15)',
-            border: '1px solid rgba(212, 175, 55, 0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 20px',
-            color: '#D4AF37'
-          }}
-        >
-          <Lock size={30} />
+        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
+          <BrandLogo size="md" showSub={true} />
         </div>
 
         <span className="badge badge-gold" style={{ marginBottom: '12px' }}>
-          Atelier Key
+          Executive Security Access
         </span>
 
-        <h3 style={{ fontSize: '1.5rem', color: '#FFFFFF', marginBottom: '8px' }}>
-          Private Access
+        <h3 style={{ fontSize: '1.4rem', color: '#FFFFFF', marginBottom: '8px' }}>
+          Atelier Management Key
         </h3>
 
         <p style={{ fontSize: '0.86rem', color: 'rgba(255, 240, 243, 0.7)', marginBottom: '22px', lineHeight: '1.5' }}>

@@ -1,9 +1,9 @@
 import React from 'react';
 import { useStore } from '../context/StoreContext';
-import { Crown, Sparkles, Gem, ShieldCheck, Scissors, Feather } from 'lucide-react';
+import { Crown, Sparkles, Gem, ShieldCheck, Scissors, Feather, Flame, Award, Heart } from 'lucide-react';
 
 export const BrandLogo = ({
-  size = 'md', // 'sm' | 'md' | 'lg' | 'xl' | number
+  size = 'md', // 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number
   showSub = true,
   customConfig = null,
   onClick = null,
@@ -19,6 +19,7 @@ export const BrandLogo = ({
   const logoType = config.logoType || (config.logoUrl ? 'image' : 'preset');
   const logoUrl = config.logoUrl || null;
   const logoPreset = config.logoPreset || 'crown';
+  const logoMonogram = config.logoMonogram || null;
   const logoHeight = typeof size === 'number' ? size : (config.logoHeight || 44);
   const logoScale = config.logoScale ?? 100;
   const logoPadding = config.logoPadding ?? 4;
@@ -32,15 +33,17 @@ export const BrandLogo = ({
   const getFilterStyle = () => {
     switch (logoFilter) {
       case 'white':
-        return 'brightness(0) invert(1) drop-shadow(0 0 8px rgba(255,255,255,0.4))';
+        return 'brightness(0) invert(1) drop-shadow(0 0 8px rgba(255,255,255,0.45))';
       case 'gold':
-        return 'sepia(1) saturate(5) hue-rotate(5deg) brightness(1.1) drop-shadow(0 0 8px rgba(212,175,55,0.4))';
+        return 'sepia(1) saturate(6) hue-rotate(10deg) brightness(1.15) drop-shadow(0 0 10px rgba(212,175,55,0.5))';
       case 'rose':
-        return 'sepia(0.8) saturate(4) hue-rotate(300deg) brightness(1.05) drop-shadow(0 0 8px rgba(232,165,152,0.4))';
+        return 'sepia(0.85) saturate(4.5) hue-rotate(305deg) brightness(1.1) drop-shadow(0 0 10px rgba(232,165,152,0.5))';
+      case 'platinum':
+        return 'grayscale(1) contrast(1.4) brightness(1.2) drop-shadow(0 0 8px rgba(240,240,250,0.4))';
       case 'contrast':
-        return 'contrast(1.3) brightness(1.05)';
+        return 'contrast(1.4) brightness(1.08) drop-shadow(0 2px 6px rgba(0,0,0,0.5))';
       default:
-        return 'none';
+        return 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))';
     }
   };
 
@@ -50,13 +53,13 @@ export const BrandLogo = ({
       case 'transparent':
         return 'transparent';
       case 'glass':
-        return 'linear-gradient(135deg, rgba(74, 14, 35, 0.6) 0%, rgba(20, 3, 11, 0.85) 100%)';
+        return 'linear-gradient(135deg, rgba(74, 14, 35, 0.65) 0%, rgba(20, 3, 11, 0.9) 100%)';
       case 'burgundy':
         return 'linear-gradient(135deg, #6A1735 0%, #2B0715 100%)';
       case 'white':
         return '#FFFFFF';
       case 'gold-tint':
-        return 'linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(32, 7, 20, 0.8) 100%)';
+        return 'linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(32, 7, 20, 0.85) 100%)';
       default:
         return 'rgba(255, 240, 243, 0.06)';
     }
@@ -69,6 +72,7 @@ export const BrandLogo = ({
       case 'rounded': return '12px';
       case 'square': return '4px';
       case 'diamond': return '30% 70% 70% 30% / 30% 30% 70% 70%';
+      case 'shield': return '10px 10px 50% 50%';
       case 'natural': return '0px';
       default: return '50%';
     }
@@ -77,6 +81,8 @@ export const BrandLogo = ({
   const getBorder = () => {
     if (logoShape === 'natural') return 'none';
     if (logoBgColor === 'white') return '1px solid rgba(255, 255, 255, 0.8)';
+    if (logoFilter === 'gold') return '1px solid rgba(212, 175, 55, 0.5)';
+    if (logoFilter === 'rose') return '1px solid rgba(232, 165, 152, 0.5)';
     return '1px solid rgba(232, 165, 152, 0.35)';
   };
 
@@ -94,6 +100,12 @@ export const BrandLogo = ({
         return <Scissors size={iconSize} color={iconColor} />;
       case 'feather':
         return <Feather size={iconSize} color={iconColor} />;
+      case 'flame':
+        return <Flame size={iconSize} color={iconColor} />;
+      case 'award':
+        return <Award size={iconSize} color={iconColor} />;
+      case 'heart':
+        return <Heart size={iconSize} color={iconColor} />;
       case 'crown':
       default:
         return <Crown size={iconSize} color={iconColor} />;
@@ -103,12 +115,12 @@ export const BrandLogo = ({
   // Size scale factors
   const computedHeight = typeof size === 'number'
     ? size
-    : size === 'sm' ? 32 : size === 'lg' ? 56 : size === 'xl' ? 72 : logoHeight;
+    : size === 'xs' ? 26 : size === 'sm' ? 34 : size === 'lg' ? 56 : size === 'xl' ? 72 : logoHeight;
 
   const frameSize = computedHeight;
   const iconSize = Math.round(computedHeight * 0.55 * (logoScale / 100));
 
-  const shouldRenderLogoGraphic = logoDisplayMode !== 'text-only' && (logoUrl || logoType === 'preset');
+  const shouldRenderLogoGraphic = logoDisplayMode !== 'text-only' && (logoUrl || logoType === 'preset' || logoType === 'monogram');
   const shouldRenderText = logoDisplayMode !== 'logo-only';
 
   return (
@@ -117,7 +129,7 @@ export const BrandLogo = ({
       onClick={onClick}
       style={{
         display: 'inline-flex',
-        alignItems: logoLayout === 'stacked' ? 'center' : 'center',
+        alignItems: 'center',
         flexDirection: logoLayout === 'stacked' ? 'column' : 'row',
         gap: logoLayout === 'stacked' ? '8px' : '14px',
         cursor: onClick ? 'pointer' : 'default',
@@ -125,7 +137,7 @@ export const BrandLogo = ({
         userSelect: 'none'
       }}
     >
-      {/* Logo Emblem / Uploaded Image */}
+      {/* Logo Emblem / Uploaded Image / Monogram */}
       {shouldRenderLogoGraphic && (
         <div
           className="brand-logo-frame"
@@ -143,7 +155,8 @@ export const BrandLogo = ({
             justifyContent: 'center',
             padding: `${logoPadding}px`,
             overflow: 'hidden',
-            transition: 'all 0.3s ease'
+            transition: 'all 0.3s ease',
+            flexShrink: 0
           }}
         >
           {logoUrl ? (
@@ -189,7 +202,7 @@ export const BrandLogo = ({
             className="brand-name"
             style={{
               fontFamily: 'var(--font-serif)',
-              fontSize: size === 'sm' ? '1.3rem' : size === 'lg' ? '2.1rem' : size === 'xl' ? '2.5rem' : '1.75rem',
+              fontSize: size === 'xs' ? '1.1rem' : size === 'sm' ? '1.3rem' : size === 'lg' ? '2.1rem' : size === 'xl' ? '2.5rem' : '1.75rem',
               fontWeight: 700,
               letterSpacing: '-0.02em',
               background: 'linear-gradient(135deg, #FFF5F7 0%, #F5CCD4 40%, #E8A598 80%, #D4AF37 100%)',
@@ -206,7 +219,7 @@ export const BrandLogo = ({
               className="brand-sub"
               style={{
                 fontFamily: 'var(--font-sans)',
-                fontSize: size === 'sm' ? '0.55rem' : '0.62rem',
+                fontSize: size === 'xs' ? '0.48rem' : size === 'sm' ? '0.55rem' : size === 'lg' ? '0.72rem' : '0.62rem',
                 fontWeight: 600,
                 letterSpacing: '0.22em',
                 textTransform: 'uppercase',

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { SocialMediaBar } from '../SocialIcons';
+import { BrandLogo } from '../BrandLogo';
 import {
   Save,
   MapPin,
@@ -28,6 +29,7 @@ export const AdminStoreSettings = () => {
     adminPasskey,
     changeAdminPasskey,
     setCurrentView,
+    setActiveAdminTab,
     formatCurrency
   } = useStore();
 
@@ -347,7 +349,45 @@ export const AdminStoreSettings = () => {
           <div className="form-grid-full" style={{ marginTop: '16px' }}>
             <div className="admin-settings-section-title">
               <Sparkles size={18} color="#E8A598" />
-              <span>Brand Identity & Philosophy Statement</span>
+              <span>Brand Identity, Logo & Philosophy Statement</span>
+            </div>
+
+            {/* Quick Logo Customizer Banner */}
+            <div
+              style={{
+                background: 'linear-gradient(135deg, rgba(74, 14, 35, 0.4) 0%, rgba(20, 3, 11, 0.8) 100%)',
+                border: '1px solid rgba(232, 165, 152, 0.3)',
+                borderRadius: '12px',
+                padding: '16px 20px',
+                marginBottom: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '14px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <BrandLogo size="md" showSub={false} />
+                <div>
+                  <div style={{ fontWeight: 600, color: '#FFFFFF', fontSize: '0.92rem' }}>
+                    Active Brand Logo & Emblem
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'rgba(255, 240, 243, 0.7)' }}>
+                    Custom upload, dimensions, metallic filters, framing shapes & monograms
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={() => setActiveAdminTab('logo')}
+                style={{ gap: '6px' }}
+              >
+                <Sparkles size={14} />
+                <span>Customize Logo & Monograms &rarr;</span>
+              </button>
             </div>
           </div>
 

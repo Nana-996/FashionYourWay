@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
+import { BrandLogo } from './BrandLogo';
 import { Search, Package, Clock, CheckCircle2, Truck, Sparkles, MapPin, Phone, Mail, ArrowRight, Printer, AlertCircle } from 'lucide-react';
 
 export const OrderTrackingView = () => {
@@ -132,28 +133,31 @@ export const OrderTrackingView = () => {
         {selectedOrder ? (
           <div className="order-result-card animate-fade-in">
             {/* Header */}
-            <div className="order-result-header">
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-                  <span className="order-result-id">Order #{selectedOrder.id}</span>
-                  <span className={`badge ${
-                    selectedOrder.status === 'Delivered'
-                      ? 'badge-blush'
-                      : selectedOrder.status === 'Cancelled'
-                      ? 'btn-danger'
-                      : 'badge-burgundy'
-                  }`}>
-                    {selectedOrder.status}
-                  </span>
-                </div>
-                <div className="order-result-date">
-                  Placed on {new Date(selectedOrder.orderDate).toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+            <div className="order-result-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                <BrandLogo size="xs" showSub={false} />
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '2px' }}>
+                    <span className="order-result-id">Order #{selectedOrder.id}</span>
+                    <span className={`badge ${
+                      selectedOrder.status === 'Delivered'
+                        ? 'badge-blush'
+                        : selectedOrder.status === 'Cancelled'
+                        ? 'btn-danger'
+                        : 'badge-burgundy'
+                    }`}>
+                      {selectedOrder.status}
+                    </span>
+                  </div>
+                  <div className="order-result-date">
+                    Placed on {new Date(selectedOrder.orderDate).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
                 </div>
               </div>
 

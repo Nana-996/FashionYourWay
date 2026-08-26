@@ -129,17 +129,28 @@ export const ProductCatalog = () => {
             }}
           >
             <Sparkles size={40} color="#E8A598" />
-            <h3>No products found matching your search</h3>
-            <p>Try clearing your search filters or browse other categories.</p>
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => {
-                setSelectedCategory('All');
-                setSearchQuery('');
-              }}
-            >
-              Reset Filters
-            </button>
+            {products.length === 0 ? (
+              <>
+                <h3 style={{ color: '#FFFFFF', fontSize: '1.4rem' }}>Catalog Currently Being Curated</h3>
+                <p style={{ color: 'rgba(255, 240, 243, 0.75)', maxWidth: '420px' }}>
+                  Our runway pieces are being prepared. Visit the Admin Portal to add and manage your fashion pieces.
+                </p>
+              </>
+            ) : (
+              <>
+                <h3 style={{ color: '#FFFFFF', fontSize: '1.4rem' }}>No products found matching your search</h3>
+                <p style={{ color: 'rgba(255, 240, 243, 0.75)' }}>Try clearing your search filters or browse other categories.</p>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => {
+                    setSelectedCategory('All');
+                    setSearchQuery('');
+                  }}
+                >
+                  Reset Filters
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
 import { X, ShoppingBag, Zap, Heart, Star, Check, Sparkles, Ruler, Truck, ShieldCheck } from 'lucide-react';
 
@@ -17,14 +17,20 @@ export const ProductDetailModal = () => {
   const product = selectedProductDetail;
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [selectedSize, setSelectedSize] = useState(
-    product && product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'S'
-  );
-  const [selectedColor, setSelectedColor] = useState(
-    product && product.colors && product.colors.length > 0 ? product.colors[0].name : 'Burgundy'
-  );
+  const [selectedSize, setSelectedSize] = useState('S');
+  const [selectedColor, setSelectedColor] = useState('Burgundy');
   const [quantity, setQuantity] = useState(1);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
+
+  useEffect(() => {
+    if (product) {
+      setSelectedImageIndex(0);
+      setSelectedSize(product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'Standard');
+      setSelectedColor(product.colors && product.colors.length > 0 ? product.colors[0].name : 'Default');
+      setQuantity(1);
+      setShowSizeGuide(false);
+    }
+  }, [product?.id]);
 
   if (!product) return null;
 

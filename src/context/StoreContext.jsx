@@ -7,14 +7,14 @@ import confetti from 'canvas-confetti';
 const StoreContext = createContext();
 
 const STORAGE_KEYS = {
-  PRODUCTS: 'fyw_products_v4_gh',
+  PRODUCTS: 'fyw_products_catalog_v5',
   STORE_INFO: 'fyw_store_info_v3_gh',
   ORDERS: 'fyw_orders_v3_gh',
   CART: 'fyw_cart_v3_gh',
   WISHLIST: 'fyw_wishlist_v3_gh'
 };
 
-// Cleanse old localStorage keys if present
+// Cleanse old broken localStorage keys if present
 try {
   ['fyw_products_v1', 'fyw_products_v2', 'fyw_products_v3_gh', 'fyw_store_info_v1'].forEach(k => {
     localStorage.removeItem(k);
@@ -24,20 +24,19 @@ try {
 }
 
 export const StoreProvider = ({ children }) => {
-  // 1. Products State
+  // 1. Products State - Persistent and reliable
   const [products, setProducts] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-      if (saved) {
+      const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS) || localStorage.getItem('fyw_products_v4_gh');
+      if (saved !== null) {
         const parsed = JSON.parse(saved);
-        // Ensure products are in Ghana Cedis
-        if (parsed.length > 0 && parsed[0].price < 500) {
-          return initialProducts;
+        if (Array.isArray(parsed)) {
+          return parsed;
         }
-        return parsed;
       }
       return initialProducts;
-    } catch {
+    } catch (e) {
+      console.error('Failed to load products from storage:', e);
       return initialProducts;
     }
   });
@@ -181,6 +180,14 @@ export const StoreProvider = ({ children }) => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isAdminAuthenticated]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+    } catch (e) {
+      console.error('Failed to save products to localStorage:', e);
+    }
+  }, [products]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.STORE_INFO, JSON.stringify(storeInfo));
@@ -417,18 +424,19 @@ export const StoreProvider = ({ children }) => {
 
   // Product CRUD (Admin)
   const addProduct = (newProductData) => {
-    const newId = `FYW-PROD-${String(products.length + 1).padStart(3, '0')}`;
+    const uniqueSuffix = Date.now().toString(36).toUpperCase() + Math.floor(100 + Math.random() * 900);
+    const newId = newProductData.id || `FYW-PROD-${uniqueSuffix}`;
     const product = {
       ...newProductData,
       id: newId,
-      rating: 5.0,
-      reviewsCount: 1,
-      stock: Number(newProductData.stock) || 10,
+      rating: newProductData.rating || 5.0,
+      reviewsCount: newProductData.reviewsCount || 1,
+      stock: Number(newProductData.stock) ?? 10,
       price: Number(newProductData.price) || 100,
-      originalPrice: Number(newProductData.originalPrice) || Number(newProductData.price) || 120
+      originalPrice: newProductData.originalPrice ? Number(newProductData.originalPrice) : null
     };
     setProducts(prev => [product, ...prev]);
-    showToast('Product Created', `${product.name} is now live in the catalog!`, 'success');
+    showToast('Product Created ✨', `${product.name} is now live in the store!`, 'success');
     return product;
   };
 
@@ -436,12 +444,33 @@ export const StoreProvider = ({ children }) => {
     setProducts(prev =>
       prev.map(p => (p.id === id ? { ...p, ...updatedFields } : p))
     );
-    showToast('Product Updated', 'Product changes saved successfully.', 'success');
+    showToast('Product Updated ✨', 'Product changes saved and live on site.', 'success');
   };
 
   const deleteProduct = (id) => {
     setProducts(prev => prev.filter(p => p.id !== id));
-    showToast('Product Removed', 'Product was deleted from the store.', 'info');
+    showToast('Product Removed', 'Product was deleted from the store catalog.', 'info');
+  };
+
+  const clearAllProducts = () => {
+    setProducts([]);
+    showToast('Catalog Cleared', 'All placeholder items have been removed.', 'info');
+  };
+
+  const restoreDemoProducts = () => {
+    setProducts(initialProducts);
+    showToast('Demo Catalog Restored', 'Restored sample showcase collection.', 'success');
+  };
+
+  const importProducts = (newProductsList) => {
+    if (Array.isArray(newProductsList) && newProductsList.length > 0) {
+      setProducts(newProductsList);
+      showToast('Catalog Imported ✨', `Successfully loaded ${newProductsList.length} products into the store!`, 'success');
+      return true;
+    } else {
+      showToast('Import Failed', 'Invalid product data format.', 'error');
+      return false;
+    }
   };
 
   // Store Settings (Admin)
@@ -470,6 +499,9 @@ export const StoreProvider = ({ children }) => {
         addProduct,
         updateProduct,
         deleteProduct,
+        clearAllProducts,
+        restoreDemoProducts,
+        importProducts,
         storeInfo,
         updateStoreInfo,
         orders,

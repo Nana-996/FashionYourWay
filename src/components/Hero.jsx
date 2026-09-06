@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../context/StoreContext';
-import { Sparkles, ArrowRight, Star, ShieldCheck, Heart } from 'lucide-react';
+import { Sparkles, ArrowRight, Star } from 'lucide-react';
 
 export const Hero = () => {
   const { storeInfo, setSelectedProductDetail, products, formatCurrency } = useStore();
@@ -21,22 +21,28 @@ export const Hero = () => {
       <div className="container hero-grid">
         {/* Left Column: Hero Editorial Copy */}
         <div className="hero-content">
-          <div className="hero-tagline-pill">
-            <Sparkles size={14} color="#E8A598" />
-            <span>Autumn / Winter Edit</span>
-          </div>
+          {storeInfo.heroPill && (
+            <div className="hero-tagline-pill">
+              <Sparkles size={14} color="#E8A598" />
+              <span>{storeInfo.heroPill}</span>
+            </div>
+          )}
 
           <h1 className="hero-title">
-            Make Them Look <span className="hero-title-highlight">Twice.</span>
+            {storeInfo.heroTitle || 'Make Them Look'}{' '}
+            <span className="hero-title-highlight">
+              {storeInfo.heroTitleHighlight || 'Twice.'}
+            </span>
           </h1>
 
           <p className="hero-subtitle">
-            Fashion designed to match your mood, your confidence, and your individuality. No rules. No limits.
+            {storeInfo.heroSubtitle ||
+              'Fashion designed to match your mood, your confidence, and your individuality. No rules. No limits.'}
           </p>
 
           <div className="hero-cta-group">
             <button className="btn btn-primary" onClick={scrollToCatalog}>
-              <span>Shop Collection</span>
+              <span>{storeInfo.heroPrimaryCta || 'Shop Collection'}</span>
               <ArrowRight size={17} />
             </button>
             {featuredProduct && (
@@ -44,7 +50,7 @@ export const Hero = () => {
                 className="btn btn-secondary"
                 onClick={() => setSelectedProductDetail(featuredProduct)}
               >
-                <span>Featured Design</span>
+                <span>{storeInfo.heroSecondaryCta || 'Featured Design'}</span>
               </button>
             )}
           </div>
@@ -97,10 +103,10 @@ export const Hero = () => {
               <div>
                 <Sparkles size={40} color="#E8A598" style={{ margin: '0 auto 16px' }} />
                 <h3 style={{ color: '#FFFFFF', marginBottom: '8px', fontSize: '1.3rem' }}>
-                  Welcome to {storeInfo.storeName || 'FashionYourWay'}
+                  {storeInfo.heroEmptyTitle || `Welcome to ${storeInfo.storeName || 'FashionYourWay'}`}
                 </h3>
                 <p style={{ color: 'rgba(255, 240, 243, 0.75)', fontSize: '0.92rem', maxWidth: '280px', margin: '0 auto' }}>
-                  Explore our bespoke handcrafted collections below or contact concierge.
+                  {storeInfo.heroEmptyDesc || 'Explore our bespoke handcrafted collections below or contact concierge.'}
                 </p>
               </div>
             </div>

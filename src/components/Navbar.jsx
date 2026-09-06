@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { BrandLogo } from './BrandLogo';
-import { ShoppingBag, Search, Sparkles, ShieldCheck, Truck, Menu, X, Heart } from 'lucide-react';
+import { ShoppingBag, Truck, Menu, X, ShieldCheck, Lock } from 'lucide-react';
 
 export const Navbar = () => {
   const {
@@ -11,8 +11,7 @@ export const Navbar = () => {
     currentView,
     setCurrentView,
     isAdminAuthenticated,
-    setIsAdminLoginModalOpen,
-    wishlist
+    setIsAdminLoginModalOpen
   } = useStore();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -42,7 +41,7 @@ export const Navbar = () => {
   return (
     <>
       {/* Top Notice Bar */}
-      {storeInfo.noticeBanner && (
+      {storeInfo.showNoticeBanner !== false && storeInfo.noticeBanner && (
         <div className="announcement-bar">
           <div className="announcement-text">
             <span>{storeInfo.noticeBanner}</span>
@@ -119,7 +118,7 @@ export const Navbar = () => {
             <button
               className="mobile-menu-btn"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Toggle menu"
+              aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
             </button>
@@ -135,8 +134,10 @@ export const Navbar = () => {
               padding: '20px 24px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '16px',
-              animation: 'fadeIn 0.2s ease'
+              gap: '14px',
+              animation: 'fadeIn 0.2s ease',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)'
             }}
           >
             <div style={{ paddingBottom: '12px', borderBottom: '1px solid rgba(232, 165, 152, 0.15)' }}>
@@ -145,32 +146,43 @@ export const Navbar = () => {
 
             <button
               className="nav-link-btn"
-              style={{ textAlign: 'left', fontSize: '1.05rem' }}
+              style={{ textAlign: 'left', fontSize: '1.05rem', padding: '10px 0' }}
               onClick={() => handleNavClick('storefront')}
             >
               Home & Collection
             </button>
             <button
               className="nav-link-btn"
-              style={{ textAlign: 'left', fontSize: '1.05rem' }}
+              style={{ textAlign: 'left', fontSize: '1.05rem', padding: '10px 0' }}
               onClick={() => handleNavClick('storefront', 'catalog-section')}
             >
               Shop All Products
             </button>
             <button
               className="nav-link-btn"
-              style={{ textAlign: 'left', fontSize: '1.05rem' }}
+              style={{ textAlign: 'left', fontSize: '1.05rem', padding: '10px 0' }}
               onClick={() => handleNavClick('track')}
             >
               Track Your Order
             </button>
             <button
               className="nav-link-btn"
-              style={{ textAlign: 'left', fontSize: '1.05rem' }}
+              style={{ textAlign: 'left', fontSize: '1.05rem', padding: '10px 0' }}
               onClick={() => handleNavClick('storefront', 'contact-section')}
             >
               Showroom & Concierge
             </button>
+
+            <div style={{ paddingTop: '10px', borderTop: '1px solid rgba(232, 165, 152, 0.12)' }}>
+              <button
+                className="btn btn-secondary btn-sm"
+                style={{ width: '100%', justifyContent: 'center', gap: '8px' }}
+                onClick={handleAdminClick}
+              >
+                <Lock size={14} />
+                <span>{isAdminAuthenticated ? 'Go to Admin Dashboard' : 'Store Owner Login'}</span>
+              </button>
+            </div>
           </div>
         )}
       </header>

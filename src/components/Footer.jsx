@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
-import { MapPin, Phone, Mail, Clock, Send, Heart, Sparkles, MessageSquare } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, MessageSquare } from 'lucide-react';
 import { SocialMediaBar } from './SocialIcons';
 import { BrandLogo } from './BrandLogo';
 
@@ -50,10 +50,11 @@ export const Footer = () => {
             <BrandLogo size="lg" onClick={() => handleNav('storefront')} />
 
             <p className="footer-desc">
-              Bespoke luxury silhouettes crafted from rich velvets and pure silks. Designed to match your confidence.
+              {storeInfo.footerManifesto ||
+                'Bespoke luxury silhouettes crafted from rich velvets and pure silks. Designed to match your confidence.'}
             </p>
 
-            {/* Clean Platform Logos (No Messy URLs) */}
+            {/* Clean Platform Logos */}
             <SocialMediaBar handles={storeInfo.socialHandles || { instagram: storeInfo.instagram, whatsapp: storeInfo.whatsapp }} />
           </div>
 
@@ -87,7 +88,7 @@ export const Footer = () => {
           {/* Showroom Location & Operating Hours */}
           <div>
             <h4 className="footer-col-title">Showroom & Atelier</h4>
-            
+
             <div className="footer-contact-item">
               <MapPin size={18} className="footer-contact-icon" />
               <div>
@@ -150,12 +151,12 @@ export const Footer = () => {
             >
               &copy;
             </span>{' '}
-            {new Date().getFullYear()} {storeInfo.storeName || 'FashionYourWay'}. All Rights Reserved. Handcrafted with passion.
+            {new Date().getFullYear()} {storeInfo.storeName || 'FashionYourWay'}. {storeInfo.footerCopyright || 'All Rights Reserved. Handcrafted with passion.'}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <span style={{ color: '#E8A598' }}>Pink Burgundy Luxury Edition</span>
+            <span style={{ color: '#E8A598' }}>{storeInfo.footerEdition || 'Pink Burgundy Luxury Edition'}</span>
             <span>&middot;</span>
-            <span style={{ color: 'rgba(255, 240, 243, 0.4)' }}>Haute Couture</span>
+            <span style={{ color: 'rgba(255, 240, 243, 0.4)' }}>{storeInfo.footerSubtext || 'Haute Couture'}</span>
           </div>
         </div>
       </div>

@@ -1,26 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { X, Plus, Trash2, Upload, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { compressImage } from '../../utils/imageCompressor';
+import { X, Plus, Trash2, Upload, Sparkles, PlusCircle, Check, Loader2 } from 'lucide-react';
+
+const INITIAL_EMPTY_FORM = {
+  name: '',
+  subtitle: '',
+  category: 'Evening & Gala',
+  price: '',
+  originalPrice: '',
+  stock: 15,
+  tag: 'New In',
+  images: [''],
+  sizesText: 'XS, S, M, L, XL',
+  colorsText: 'Burgundy Wine (#4A0E23), Blush Rose (#E8A598), Pearl White (#FFFFFF), Noir (#1F0610)',
+  description: '',
+  featuresText: 'Premium mulberry fabric\nTailored fit silhouette\nDry clean only'
+};
 
 export const AdminProductModal = ({ productToEdit, onClose }) => {
-  const { addProduct, updateProduct } = useStore();
+  const { addProduct, updateProduct, showToast } = useStore();
 
   const isEditMode = Boolean(productToEdit);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    subtitle: '',
-    category: 'Evening & Gala',
-    price: '',
-    originalPrice: '',
-    stock: 15,
-    tag: 'New In',
-    images: [''],
-    sizesText: 'XS, S, M, L, XL',
-    colorsText: 'Burgundy Wine (#4A0E23), Blush Rose (#E8A598), Pearl White (#FFFFFF), Noir (#1F0610)',
-    description: '',
-    featuresText: 'Premium mulberry fabric\nTailored fit silhouette\nDry clean only'
-  });
+  const [formData, setFormData] = useState(INITIAL_EMPTY_FORM);
+  const [compressingIdx, setCompressingIdx] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (productToEdit) {
@@ -40,6 +45,8 @@ export const AdminProductModal = ({ productToEdit, onClose }) => {
         description: productToEdit.description || '',
         featuresText: productToEdit.features ? productToEdit.features.join('\n') : ''
       });
+    } else {
+      setFormData(INITIAL_EMPTY_FORM);
     }
   }, [productToEdit]);
 
@@ -62,20 +69,28 @@ export const AdminProductModal = ({ productToEdit, onClose }) => {
     }
   };
 
-  const handleFileUpload = (e, index) => {
+  const handleFileUpload = async (e, index) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      handleImageChange(index, reader.result);
-    };
-    reader.readAsDataURL(file);
+    setCompressingIdx(index);
+    try {
+      // Compress smartphone photo (from 5-12MB to <100KB WebP/JPEG)
+      const compressedDataUrl = await compressImage(file, 1000, 1200, 0.82);
+      handleImageChange(index, compressedDataUrl);
+      showToast('Photo Optimized ✨', 'Image compressed for fast loading', 'info');
+    } catch (err) {
+      console.error('Image compression error', err);
+      // Fallback to normal FileReader
+      const reader = new FileReader();
+      reader.onloadend = () => handleImageChange(index, reader.result);
+      reader.readAsDataURL(file);
+    } finally {
+      setCompressingIdx(null);
+    }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
+  const buildPayload = () => {
     // Parse sizes
     const sizes = formData.sizesText
       .split(',')
@@ -104,9 +119,9 @@ export const AdminProductModal = ({ productToEdit, onClose }) => {
     const validImages = formData.images.filter(img => img && img.trim().length > 0);
     const fallbackImage = 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=800&q=80';
 
-    const payload = {
-      name: formData.name,
-      subtitle: formData.subtitle,
+    return {
+      name: formData.name.trim(),
+      subtitle: formData.subtitle.trim(),
       category: formData.category,
       price: Number(formData.price) || 150,
       originalPrice: formData.originalPrice ? Number(formData.originalPrice) : null,
@@ -115,34 +130,63 @@ export const AdminProductModal = ({ productToEdit, onClose }) => {
       images: validImages.length > 0 ? validImages : [fallbackImage],
       sizes: sizes.length > 0 ? sizes : ['XS', 'S', 'M', 'L'],
       colors: colors.length > 0 ? colors : [{ name: 'Burgundy', hex: '#4A0E23' }],
-      description: formData.description,
+      description: formData.description.trim(),
       features: features.length > 0 ? features : ['Handcrafted luxury finish', 'Dry clean only']
     };
+  };
 
-    if (isEditMode) {
-      updateProduct(productToEdit.id, payload);
-    } else {
-      addProduct(payload);
+  const handleSubmit = (e, shouldAddAnother = false) => {
+    if (e) e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const payload = buildPayload();
+
+      if (isEditMode) {
+        updateProduct(productToEdit.id, payload);
+        onClose();
+      } else {
+        addProduct(payload);
+
+        if (shouldAddAnother) {
+          // Reset form to add another piece immediately
+          setFormData(INITIAL_EMPTY_FORM);
+          showToast('Piece Added ✨', 'Ready to add your next fashion piece!', 'success');
+        } else {
+          onClose();
+        }
+      }
+    } catch (err) {
+      console.error('Failed to save product:', err);
+      showToast('Save Error', 'Could not save product: ' + err.message, 'error');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onClose();
   };
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="checkout-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '780px' }}>
-        <button className="modal-close-btn" onClick={onClose}>
+      <div
+        className="checkout-modal"
+        onClick={e => e.stopPropagation()}
+        style={{
+          maxWidth: '780px',
+          width: '100%',
+          margin: '20px auto'
+        }}
+      >
+        <button className="modal-close-btn" onClick={onClose} aria-label="Close modal">
           <X size={20} />
         </button>
 
         <h3 style={{ fontSize: '1.45rem', marginBottom: '8px', color: '#FFFFFF' }}>
-          {isEditMode ? `Edit Product: ${productToEdit.name}` : 'Create New Luxury Product'}
+          {isEditMode ? `Edit Product: ${productToEdit.name}` : 'Create New Luxury Product Piece'}
         </h3>
         <p style={{ fontSize: '0.88rem', color: 'rgba(255, 240, 243, 0.7)', marginBottom: '24px' }}>
-          Update the product details, stock, pricing, color variants, and imagery.
+          Update the product details, stock, pricing, color variants, and imagery. Automatically optimized for web & mobile.
         </p>
 
-        <form onSubmit={handleSubmit} className="form-grid">
+        <form onSubmit={e => handleSubmit(e, false)} className="form-grid">
           <div className="form-group form-grid-full">
             <label>Product Title / Name *</label>
             <input
@@ -252,10 +296,10 @@ export const AdminProductModal = ({ productToEdit, onClose }) => {
             />
           </div>
 
-          {/* Product Photos Section */}
+          {/* Product Photos Section with Auto Compression */}
           <div className="form-group form-grid-full">
-            <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>Product Image URLs & Direct Uploads</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label style={{ margin: 0 }}>Product Photos & Uploads (Direct Camera / Gallery)</label>
               <button
                 type="button"
                 onClick={handleAddImageField}
@@ -271,54 +315,90 @@ export const AdminProductModal = ({ productToEdit, onClose }) => {
                 }}
               >
                 <Plus size={14} />
-                <span>Add Image</span>
+                <span>Add Another Photo</span>
               </button>
-            </label>
+            </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {formData.images.map((img, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   {img && (
                     <img
                       src={img}
                       alt="preview"
-                      style={{ width: '44px', height: '54px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(232,165,152,0.3)' }}
+                      style={{
+                        width: '44px',
+                        height: '54px',
+                        objectFit: 'cover',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(232,165,152,0.3)',
+                        backgroundColor: '#19040E'
+                      }}
                     />
                   )}
                   <input
                     type="text"
-                    placeholder="https://images.unsplash.com/... or paste image URL"
+                    placeholder="Paste image URL or tap upload button →"
                     className="form-input"
-                    style={{ flex: 1 }}
+                    style={{ flex: 1, minWidth: '180px' }}
                     value={img}
                     onChange={e => handleImageChange(idx, e.target.value)}
                   />
+
                   <label
                     style={{
-                      background: 'rgba(232, 165, 152, 0.15)',
+                      background: compressingIdx === idx ? 'rgba(232, 165, 152, 0.3)' : 'rgba(232, 165, 152, 0.15)',
                       border: '1px solid rgba(232, 165, 152, 0.3)',
-                      padding: '12px',
+                      padding: '12px 16px',
                       borderRadius: '8px',
                       cursor: 'pointer',
-                      display: 'flex',
+                      display: 'inline-flex',
                       alignItems: 'center',
-                      color: '#E8A598'
+                      gap: '6px',
+                      color: '#E8A598',
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      minHeight: '44px'
                     }}
-                    title="Upload image from computer"
+                    title="Upload photo from phone or computer"
                   >
-                    <Upload size={16} />
+                    {compressingIdx === idx ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>Optimizing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={16} />
+                        <span>Upload Photo</span>
+                      </>
+                    )}
                     <input
                       type="file"
                       accept="image/*"
                       style={{ display: 'none' }}
+                      disabled={compressingIdx !== null}
                       onChange={e => handleFileUpload(e, idx)}
                     />
                   </label>
+
                   {formData.images.length > 1 && (
                     <button
                       type="button"
                       onClick={() => handleRemoveImageField(idx)}
-                      style={{ background: 'none', border: 'none', color: '#F87171', cursor: 'pointer', padding: '6px' }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#F87171',
+                        cursor: 'pointer',
+                        padding: '8px',
+                        minHeight: '44px',
+                        minWidth: '44px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      aria-label="Remove image field"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -351,13 +431,37 @@ export const AdminProductModal = ({ productToEdit, onClose }) => {
             />
           </div>
 
-          <div className="form-grid-full" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+          {/* Action Buttons */}
+          <div
+            className="form-grid-full"
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px',
+              marginTop: '20px',
+              flexWrap: 'wrap'
+            }}
+          >
             <button type="button" className="btn btn-secondary" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary">
+
+            {!isEditMode && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={isSubmitting}
+                onClick={() => handleSubmit(null, true)}
+                style={{ gap: '8px' }}
+              >
+                <PlusCircle size={16} />
+                <span>Publish & Add Another</span>
+              </button>
+            )}
+
+            <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ gap: '8px' }}>
               <Sparkles size={16} />
-              <span>{isEditMode ? 'Save Product Changes' : 'Publish Product to Store'}</span>
+              <span>{isEditMode ? 'Save Changes' : 'Publish to Store Catalog'}</span>
             </button>
           </div>
         </form>

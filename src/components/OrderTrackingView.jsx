@@ -4,7 +4,7 @@ import { BrandLogo } from './BrandLogo';
 import { Search, Package, Clock, CheckCircle2, Truck, Sparkles, MapPin, Phone, Mail, ArrowRight, Printer, AlertCircle } from 'lucide-react';
 
 export const OrderTrackingView = () => {
-  const { orders, trackQuery, setTrackQuery, setCurrentView, formatCurrency } = useStore();
+  const { orders, trackQuery, setTrackQuery, setCurrentView, formatCurrency, storeInfo } = useStore();
 
   const [searchInput, setSearchInput] = useState(trackQuery || '');
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -75,11 +75,11 @@ export const OrderTrackingView = () => {
         <div className="track-hero-box">
           <span className="badge badge-burgundy" style={{ marginBottom: '14px' }}>
             <Sparkles size={14} />
-            <span>VIP Client Concierge</span>
+            <span>{storeInfo.trackingBadge || 'VIP Client Concierge'}</span>
           </span>
-          <h1>Client Order Management & Tracking</h1>
+          <h1>{storeInfo.trackingHeroTitle || 'Client Order Management & Tracking'}</h1>
           <p>
-            Track your bespoke tailoring, packaging status, and courier dispatch in real time.
+            {storeInfo.trackingHeroSubtitle || 'Track your bespoke tailoring, packaging status, and courier dispatch in real time.'}
           </p>
 
           {/* Search Lookup Card */}

@@ -1,64 +1,49 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { initialProducts } from '../data/initialProducts';
 import { initialStoreInfo } from '../data/initialStoreInfo';
 import { initialOrders } from '../data/initialOrders';
+import {
+  syncStorageGet,
+  resilientStorageSet,
+  resilientStorageRemove,
+  idbGet,
+  idbSet
+} from '../utils/storage';
 import confetti from 'canvas-confetti';
 
 const StoreContext = createContext();
 
 const STORAGE_KEYS = {
-  PRODUCTS: 'fyw_products_catalog_v5',
-  STORE_INFO: 'fyw_store_info_v3_gh',
-  ORDERS: 'fyw_orders_v3_gh',
-  CART: 'fyw_cart_v3_gh',
-  WISHLIST: 'fyw_wishlist_v3_gh'
+  PRODUCTS: 'fyw_products_catalog_v6',
+  STORE_INFO: 'fyw_store_info_v4_gh',
+  ORDERS: 'fyw_orders_v4_gh',
+  CART: 'fyw_cart_v4_gh',
+  WISHLIST: 'fyw_wishlist_v4_gh'
 };
 
-// Cleanse old broken localStorage keys if present
-try {
-  ['fyw_products_v1', 'fyw_products_v2', 'fyw_products_v3_gh', 'fyw_store_info_v1'].forEach(k => {
-    localStorage.removeItem(k);
-  });
-} catch (e) {
-  console.log('Cleanup error', e);
-}
-
 export const StoreProvider = ({ children }) => {
-  // 1. Products State - Persistent and reliable
+  // 1. Products State - Persistent with IndexedDB + LocalStorage
   const [products, setProducts] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS) || localStorage.getItem('fyw_products_v4_gh');
-      if (saved !== null) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed;
-        }
+      const saved = syncStorageGet(STORAGE_KEYS.PRODUCTS, null) || syncStorageGet('fyw_products_catalog_v5', null);
+      if (saved && Array.isArray(saved) && saved.length > 0) {
+        return saved;
       }
       return initialProducts;
-    } catch (e) {
-      console.error('Failed to load products from storage:', e);
+    } catch {
       return initialProducts;
     }
   });
 
-  // 2. Store Info State (Strictly Ghana Cedi)
+  // 2. Store Info State (Strictly Ghana Cedi + All Editable Site Copy)
   const [storeInfo, setStoreInfo] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.STORE_INFO);
+      const saved = syncStorageGet(STORAGE_KEYS.STORE_INFO, null) || syncStorageGet('fyw_store_info_v3_gh', null);
       if (saved) {
-        const parsed = JSON.parse(saved);
-        parsed.currencySymbol = 'GH₵';
-        if (parsed.noticeBanner && parsed.noticeBanner.includes('$')) {
-          parsed.noticeBanner = parsed.noticeBanner.replace(/\$/g, 'GH₵ ');
-        }
         return {
           ...initialStoreInfo,
-          ...parsed,
-          currencySymbol: 'GH₵',
-          paystackPublicKey: parsed.paystackPublicKey || initialStoreInfo.paystackPublicKey,
-          paystackSecretKey: parsed.paystackSecretKey || initialStoreInfo.paystackSecretKey,
-          paystackEnabled: parsed.paystackEnabled ?? initialStoreInfo.paystackEnabled,
-          paystackMode: parsed.paystackMode || initialStoreInfo.paystackMode
+          ...saved,
+          currencySymbol: 'GH₵'
         };
       }
       return initialStoreInfo;
@@ -70,8 +55,8 @@ export const StoreProvider = ({ children }) => {
   // 3. Orders State
   const [orders, setOrders] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.ORDERS);
-      return saved ? JSON.parse(saved) : initialOrders;
+      const saved = syncStorageGet(STORAGE_KEYS.ORDERS, null) || syncStorageGet('fyw_orders_v3_gh', null);
+      return saved && Array.isArray(saved) ? saved : initialOrders;
     } catch {
       return initialOrders;
     }
@@ -80,8 +65,8 @@ export const StoreProvider = ({ children }) => {
   // 4. Cart State
   const [cart, setCart] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.CART);
-      return saved ? JSON.parse(saved) : [];
+      const saved = syncStorageGet(STORAGE_KEYS.CART, null) || syncStorageGet('fyw_cart_v3_gh', null);
+      return saved && Array.isArray(saved) ? saved : [];
     } catch {
       return [];
     }
@@ -90,8 +75,8 @@ export const StoreProvider = ({ children }) => {
   // 5. Wishlist State
   const [wishlist, setWishlist] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.WISHLIST);
-      return saved ? JSON.parse(saved) : [];
+      const saved = syncStorageGet(STORAGE_KEYS.WISHLIST, null) || syncStorageGet('fyw_wishlist_v3_gh', null);
+      return saved && Array.isArray(saved) ? saved : [];
     } catch {
       return [];
     }
@@ -116,13 +101,110 @@ export const StoreProvider = ({ children }) => {
 
   // UI States
   const [currentView, setCurrentView] = useState('storefront'); // 'storefront' | 'track' | 'admin'
-  const [activeAdminTab, setActiveAdminTab] = useState('orders'); // 'overview' | 'orders' | 'products' | 'settings'
+  const [activeAdminTab, setActiveAdminTab] = useState('orders'); // 'orders' | 'products' | 'text-editor' | 'logo' | 'settings'
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [selectedProductDetail, setSelectedProductDetail] = useState(null);
   const [trackQuery, setTrackQuery] = useState('');
   const [toasts, setToasts] = useState([]);
 
+  // Toast Notification Trigger
+  const showToast = useCallback((title, message = '', type = 'success') => {
+    const id = Date.now() + Math.random().toString(36).substr(2, 5);
+    setToasts(prev => [...prev, { id, title, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4000);
+  }, []);
+
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  // Async Hydration from IndexedDB on startup (covers any items saved when LocalStorage was at quota)
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const idbProds = await idbGet(STORAGE_KEYS.PRODUCTS);
+        if (isMounted && Array.isArray(idbProds) && idbProds.length > 0) {
+          // If IndexedDB has catalog items, ensure state has them
+          setProducts(prev => {
+            if (idbProds.length >= prev.length) {
+              return idbProds;
+            }
+            return prev;
+          });
+        }
+
+        const idbInfo = await idbGet(STORAGE_KEYS.STORE_INFO);
+        if (isMounted && idbInfo && typeof idbInfo === 'object') {
+          setStoreInfo(prev => ({
+            ...prev,
+            ...idbInfo,
+            currencySymbol: 'GH₵'
+          }));
+        }
+
+        const idbOrds = await idbGet(STORAGE_KEYS.ORDERS);
+        if (isMounted && Array.isArray(idbOrds) && idbOrds.length > 0) {
+          setOrders(prev => (idbOrds.length >= prev.length ? idbOrds : prev));
+        }
+      } catch (err) {
+        console.warn('IndexedDB initial hydration note:', err);
+      }
+    })();
+
+    // Multi-tab storage synchronization
+    const handleStorageChange = (e) => {
+      if (!e.key) return;
+      if (e.key === STORAGE_KEYS.PRODUCTS && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) setProducts(parsed);
+        } catch {}
+      } else if (e.key === STORAGE_KEYS.STORE_INFO && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed && typeof parsed === 'object') setStoreInfo(parsed);
+        } catch {}
+      } else if (e.key === STORAGE_KEYS.ORDERS && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) setOrders(parsed);
+        } catch {}
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // Save changes with resilient storage (LocalStorage + IndexedDB)
+  useEffect(() => {
+    resilientStorageSet(STORAGE_KEYS.PRODUCTS, products);
+  }, [products]);
+
+  useEffect(() => {
+    resilientStorageSet(STORAGE_KEYS.STORE_INFO, storeInfo);
+  }, [storeInfo]);
+
+  useEffect(() => {
+    resilientStorageSet(STORAGE_KEYS.ORDERS, orders);
+  }, [orders]);
+
+  useEffect(() => {
+    resilientStorageSet(STORAGE_KEYS.CART, cart);
+  }, [cart]);
+
+  useEffect(() => {
+    resilientStorageSet(STORAGE_KEYS.WISHLIST, wishlist);
+  }, [wishlist]);
+
+  // Admin Security Controls
   const loginAdmin = (enteredKey) => {
     if (enteredKey === adminPasskey || enteredKey === 'admin123' || enteredKey === 'fashion2026') {
       setIsAdminAuthenticated(true);
@@ -152,7 +234,6 @@ export const StoreProvider = ({ children }) => {
 
   // Secret Stealth Triggers (Ctrl+Shift+A or URL query/hash #admin / ?admin)
   useEffect(() => {
-    // Check URL on load
     const checkUrlForAdmin = () => {
       const searchParams = new URLSearchParams(window.location.search);
       if (searchParams.has('admin') || window.location.hash === '#admin') {
@@ -165,7 +246,6 @@ export const StoreProvider = ({ children }) => {
     };
     checkUrlForAdmin();
 
-    // Global Key Listener: Ctrl+Shift+A or Cmd+Shift+A
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
         e.preventDefault();
@@ -180,43 +260,6 @@ export const StoreProvider = ({ children }) => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isAdminAuthenticated]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
-    } catch (e) {
-      console.error('Failed to save products to localStorage:', e);
-    }
-  }, [products]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.STORE_INFO, JSON.stringify(storeInfo));
-  }, [storeInfo]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
-  }, [orders]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(cart));
-  }, [cart]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.WISHLIST, JSON.stringify(wishlist));
-  }, [wishlist]);
-
-  // Toast Notification Trigger
-  const showToast = (title, message = '', type = 'success') => {
-    const id = Date.now() + Math.random().toString(36).substr(2, 5);
-    setToasts(prev => [...prev, { id, title, message, type }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 4000);
-  };
-
-  const removeToast = (id) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-  };
 
   // Wishlist toggle
   const toggleWishlist = (productId) => {
@@ -289,7 +332,7 @@ export const StoreProvider = ({ children }) => {
     setCart([]);
   };
 
-  const cartSubtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const cartSubtotal = cart.reduce((acc, item) => acc + (Number(item.price) || 0) * item.quantity, 0);
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   const currencySymbol = storeInfo?.currencySymbol || 'GH₵';
@@ -371,12 +414,10 @@ export const StoreProvider = ({ children }) => {
       })
     );
 
-    // Save order
     setOrders(prev => [newOrder, ...prev]);
     clearCart();
     setIsCheckoutOpen(false);
 
-    // Confetti celebration
     try {
       confetti({
         particleCount: 120,
@@ -422,27 +463,59 @@ export const StoreProvider = ({ children }) => {
     showToast('Notes Saved', `Updated admin notes for ${orderId}`, 'info');
   };
 
-  // Product CRUD (Admin)
+  // Robust Product CRUD (Admin) - crash-proof and multi-item ready
   const addProduct = (newProductData) => {
-    const uniqueSuffix = Date.now().toString(36).toUpperCase() + Math.floor(100 + Math.random() * 900);
+    const uniqueSuffix = Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
     const newId = newProductData.id || `FYW-PROD-${uniqueSuffix}`;
-    const product = {
+
+    const sanitizedProduct = {
       ...newProductData,
       id: newId,
+      name: (newProductData.name || 'Untitled Piece').trim(),
+      subtitle: (newProductData.subtitle || '').trim(),
+      category: (newProductData.category || 'Evening & Gala').trim(),
+      price: Number(newProductData.price) || 100,
+      originalPrice: newProductData.originalPrice ? Number(newProductData.originalPrice) : null,
+      stock: Math.max(0, Number(newProductData.stock) ?? 10),
+      tag: (newProductData.tag || '').trim(),
+      images: Array.isArray(newProductData.images) && newProductData.images.filter(Boolean).length > 0
+        ? newProductData.images.filter(Boolean)
+        : ['https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=800&q=80'],
+      sizes: Array.isArray(newProductData.sizes) && newProductData.sizes.length > 0 ? newProductData.sizes : ['Standard'],
+      colors: Array.isArray(newProductData.colors) && newProductData.colors.length > 0
+        ? newProductData.colors
+        : [{ name: 'Burgundy', hex: '#4A0E23' }],
+      description: (newProductData.description || '').trim(),
+      features: Array.isArray(newProductData.features) && newProductData.features.length > 0
+        ? newProductData.features
+        : ['Handcrafted luxury finish', 'Dry clean only'],
       rating: newProductData.rating || 5.0,
       reviewsCount: newProductData.reviewsCount || 1,
-      stock: Number(newProductData.stock) ?? 10,
-      price: Number(newProductData.price) || 100,
-      originalPrice: newProductData.originalPrice ? Number(newProductData.originalPrice) : null
+      createdAt: new Date().toISOString()
     };
-    setProducts(prev => [product, ...prev]);
-    showToast('Product Created ✨', `${product.name} is now live in the store!`, 'success');
-    return product;
+
+    setProducts(prev => [sanitizedProduct, ...prev]);
+    showToast('Product Created ✨', `${sanitizedProduct.name} is now live in the store!`, 'success');
+    return sanitizedProduct;
   };
 
   const updateProduct = (id, updatedFields) => {
     setProducts(prev =>
-      prev.map(p => (p.id === id ? { ...p, ...updatedFields } : p))
+      prev.map(p => {
+        if (p.id !== id) return p;
+        return {
+          ...p,
+          ...updatedFields,
+          price: updatedFields.price !== undefined ? Number(updatedFields.price) : p.price,
+          originalPrice: updatedFields.originalPrice !== undefined
+            ? (updatedFields.originalPrice ? Number(updatedFields.originalPrice) : null)
+            : p.originalPrice,
+          stock: updatedFields.stock !== undefined ? Math.max(0, Number(updatedFields.stock)) : p.stock,
+          images: Array.isArray(updatedFields.images) && updatedFields.images.filter(Boolean).length > 0
+            ? updatedFields.images.filter(Boolean)
+            : p.images
+        };
+      })
     );
     showToast('Product Updated ✨', 'Product changes saved and live on site.', 'success');
   };
@@ -473,10 +546,22 @@ export const StoreProvider = ({ children }) => {
     }
   };
 
-  // Store Settings (Admin)
+  // Store Settings & Website Text Updates (Admin)
   const updateStoreInfo = (newInfo) => {
-    setStoreInfo(prev => ({ ...prev, ...newInfo }));
+    setStoreInfo(prev => ({
+      ...prev,
+      ...newInfo,
+      currencySymbol: 'GH₵'
+    }));
     showToast('Store Profile Updated', 'Public business details have been updated.', 'success');
+  };
+
+  const updateStoreText = (textUpdates) => {
+    setStoreInfo(prev => ({
+      ...prev,
+      ...textUpdates
+    }));
+    showToast('Website Text Saved ✨', 'Storefront wording has been updated live!', 'success');
   };
 
   // Reset to demo defaults
@@ -485,10 +570,10 @@ export const StoreProvider = ({ children }) => {
     setStoreInfo(initialStoreInfo);
     setOrders(initialOrders);
     setCart([]);
-    localStorage.removeItem(STORAGE_KEYS.PRODUCTS);
-    localStorage.removeItem(STORAGE_KEYS.STORE_INFO);
-    localStorage.removeItem(STORAGE_KEYS.ORDERS);
-    localStorage.removeItem(STORAGE_KEYS.CART);
+    resilientStorageRemove(STORAGE_KEYS.PRODUCTS);
+    resilientStorageRemove(STORAGE_KEYS.STORE_INFO);
+    resilientStorageRemove(STORAGE_KEYS.ORDERS);
+    resilientStorageRemove(STORAGE_KEYS.CART);
     showToast('Data Reset', 'Restored original demo catalog & store details', 'info');
   };
 
@@ -504,6 +589,7 @@ export const StoreProvider = ({ children }) => {
         importProducts,
         storeInfo,
         updateStoreInfo,
+        updateStoreText,
         orders,
         placeOrder,
         updateOrderStatus,

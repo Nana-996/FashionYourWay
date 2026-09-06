@@ -346,14 +346,7 @@ export const AdminLogoStudio = () => {
       )}
 
       {/* Main Studio Grid: Left Controls | Right Live Multi-View Preview */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1.2fr 1fr',
-          gap: '28px',
-          alignItems: 'start'
-        }}
-      >
+      <div className="admin-logo-studio-layout">
         {/* LEFT COLUMN: Editing Tools & Customizer */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Card 1: Logo Creation Mode Tabs & Source */}

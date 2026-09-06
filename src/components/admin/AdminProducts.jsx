@@ -14,8 +14,6 @@ import {
   Upload,
   Copy,
   Check,
-  FileCode,
-  AlertTriangle,
   X
 } from 'lucide-react';
 
@@ -39,12 +37,16 @@ export const AdminProducts = () => {
   const [importJsonText, setImportJsonText] = useState('');
   const [copiedCode, setCopiedCode] = useState(false);
 
-  const filteredProducts = products.filter(p =>
-    !searchQuery.trim() ||
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const q = searchQuery.trim().toLowerCase();
+  const filteredProducts = products.filter(p => {
+    if (!p) return false;
+    return (
+      !q ||
+      (p.name && p.name.toLowerCase().includes(q)) ||
+      (p.category && p.category.toLowerCase().includes(q)) ||
+      (p.id && p.id.toLowerCase().includes(q))
+    );
+  });
 
   const handleDelete = (product) => {
     if (window.confirm(`Are you sure you want to remove "${product.name}" from the store catalog?`)) {
@@ -123,7 +125,7 @@ export const AdminProducts = () => {
               Live Storefront Synchronization: Active
             </div>
             <div style={{ fontSize: '0.78rem', color: 'rgba(255, 240, 243, 0.7)' }}>
-              All additions, edits, and removals automatically save and reflect live for customers.
+              All additions, edits, and removals automatically persist and reflect live for customers.
             </div>
           </div>
         </div>
@@ -136,7 +138,7 @@ export const AdminProducts = () => {
             title="Export or copy product catalog code"
           >
             <Download size={14} />
-            <span>Export Catalog</span>
+            <span>Export</span>
           </button>
 
           <button
@@ -146,7 +148,7 @@ export const AdminProducts = () => {
             title="Import products from JSON"
           >
             <Upload size={14} />
-            <span>Import JSON</span>
+            <span>Import</span>
           </button>
 
           {products.length > 0 ? (
@@ -174,8 +176,8 @@ export const AdminProducts = () => {
       </div>
 
       {/* Product Management Toolbar */}
-      <div className="admin-header-row">
-        <div className="catalog-search-bar" style={{ width: '360px' }}>
+      <div className="admin-header-row" style={{ alignItems: 'stretch' }}>
+        <div className="catalog-search-bar" style={{ flex: 1, minWidth: '240px' }}>
           <Search size={18} color="#E8A598" />
           <input
             type="text"
@@ -184,13 +186,21 @@ export const AdminProducts = () => {
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{ background: 'none', border: 'none', color: '#E8A598', cursor: 'pointer', padding: '4px' }}
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
             className="btn btn-primary"
             onClick={() => setIsCreateModalOpen(true)}
-            style={{ gap: '8px' }}
+            style={{ gap: '8px', width: '100%', justifyContent: 'center' }}
           >
             <Plus size={18} />
             <span>Add New Fashion Piece</span>
@@ -198,11 +208,11 @@ export const AdminProducts = () => {
         </div>
       </div>
 
-      {/* Products Table Card */}
+      {/* Products Container Card */}
       <div className="admin-table-container">
         <div className="admin-table-header">
-          <div style={{ fontWeight: 600, color: '#FFFFFF' }}>
-            Store Catalog Inventory ({products.length} Total Pieces{searchQuery ? ` &middot; ${filteredProducts.length} Matching` : ''})
+          <div style={{ fontWeight: 600, color: '#FFFFFF', fontSize: '0.96rem' }}>
+            Store Catalog Inventory ({products.length} Total Pieces{searchQuery ? ` · ${filteredProducts.length} Matching` : ''})
           </div>
           {products.length > 0 && (
             <button
@@ -220,159 +230,265 @@ export const AdminProducts = () => {
               }}
             >
               <RotateCcw size={13} />
-              <span>Reset to Demo Catalog</span>
+              <span>Reset to Demo Items</span>
             </button>
           )}
         </div>
 
-        <div className="admin-table-wrap">
-          {filteredProducts.length > 0 ? (
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Category</th>
-                  <th>Price</th>
-                  <th>Stock</th>
-                  <th>Sizes & Colors</th>
-                  <th>Tag</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProducts.map(prod => (
-                  <tr key={prod.id}>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                        <img
-                          src={(prod.images && prod.images[0]) || 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=300&q=80'}
-                          alt={prod.name}
-                          className="admin-product-thumb"
-                        />
-                        <div>
-                          <div style={{ fontWeight: 600, color: '#FFFFFF' }}>{prod.name}</div>
-                          <div style={{ fontSize: '0.78rem', color: '#E8A598' }}>{prod.id}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="badge badge-blush">{prod.category}</span>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{formatCurrency(prod.price)}</div>
-                      {prod.originalPrice && (
-                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,240,243,0.4)', textDecoration: 'line-through' }}>
-                          {formatCurrency(prod.originalPrice)}
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      <span
-                        style={{
-                          fontWeight: 600,
-                          color: prod.stock <= 3 ? '#F87171' : '#86EFAC'
-                        }}
-                      >
-                        {prod.stock} units
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ fontSize: '0.82rem', color: 'rgba(255,245,247,0.8)' }}>
-                        {prod.sizes ? prod.sizes.join(', ') : 'Standard'}
-                      </div>
-                      {prod.colors && prod.colors.length > 0 && (
-                        <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
-                          {prod.colors.map((c, i) => (
-                            <span
-                              key={i}
-                              title={c.name}
-                              style={{
-                                width: '10px',
-                                height: '10px',
-                                borderRadius: '50%',
-                                backgroundColor: c.hex || '#6B1736',
-                                display: 'inline-block',
-                                border: '1px solid rgba(255,255,255,0.3)'
-                              }}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      {prod.tag ? (
-                        <span className="badge badge-burgundy">{prod.tag}</span>
-                      ) : (
-                        <span style={{ color: 'rgba(255,240,243,0.4)', fontSize: '0.8rem' }}>—</span>
-                      )}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '8px' }}>
-                        <button
-                          className="btn-icon btn-secondary"
-                          style={{ width: '32px', height: '32px' }}
-                          title="Preview on Storefront"
-                          onClick={() => setSelectedProductDetail(prod)}
-                        >
-                          <ExternalLink size={14} />
-                        </button>
-                        <button
-                          className="btn-icon btn-secondary"
-                          style={{ width: '32px', height: '32px' }}
-                          title="Edit Product Details & Photos"
-                          onClick={() => setEditingProduct(prod)}
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          className="btn-icon btn-danger"
-                          style={{ width: '32px', height: '32px' }}
-                          title="Delete Product"
-                          onClick={() => handleDelete(prod)}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
+        {filteredProducts.length > 0 ? (
+          <>
+            {/* 1. DESKTOP VIEW: Clean Structured Table */}
+            <div className="admin-desktop-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Sizes & Colors</th>
+                    <th>Tag</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div
-              style={{
-                padding: '50px 20px',
-                textAlign: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '14px'
-              }}
-            >
-              <Package size={44} color="#E8A598" />
-              <div style={{ fontWeight: 600, color: '#FFFFFF', fontSize: '1.1rem' }}>
-                {products.length === 0 ? 'No Products in Store Catalog' : 'No Products Matching Search'}
-              </div>
-              <p style={{ color: 'rgba(255, 240, 243, 0.7)', maxWidth: '400px', fontSize: '0.88rem' }}>
-                {products.length === 0
-                  ? 'Your store is ready for your unique collection! Click below to create your first fashion piece or restore sample showcase items.'
-                  : 'Try clearing your search query to view all items.'}
-              </p>
-              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
-                <button className="btn btn-primary btn-sm" onClick={() => setIsCreateModalOpen(true)}>
-                  <Plus size={15} />
-                  <span>Add First Fashion Piece</span>
-                </button>
-                {products.length === 0 && (
-                  <button className="btn btn-secondary btn-sm" onClick={handleRestoreDemo}>
-                    <RotateCcw size={15} />
-                    <span>Restore Demo Items</span>
-                  </button>
-                )}
-              </div>
+                </thead>
+                <tbody>
+                  {filteredProducts.map(prod => (
+                    <tr key={prod.id}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                          <img
+                            src={(prod.images && prod.images[0]) || 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=300&q=80'}
+                            alt={prod.name}
+                            className="admin-product-thumb"
+                          />
+                          <div>
+                            <div style={{ fontWeight: 600, color: '#FFFFFF' }}>{prod.name}</div>
+                            <div style={{ fontSize: '0.78rem', color: '#E8A598' }}>{prod.id}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="badge badge-blush">{prod.category}</span>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{formatCurrency(prod.price)}</div>
+                        {prod.originalPrice && (
+                          <div style={{ fontSize: '0.78rem', color: 'rgba(255,240,243,0.4)', textDecoration: 'line-through' }}>
+                            {formatCurrency(prod.originalPrice)}
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        <span
+                          style={{
+                            fontWeight: 600,
+                            color: prod.stock <= 3 ? '#F87171' : '#86EFAC'
+                          }}
+                        >
+                          {prod.stock} units
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ fontSize: '0.82rem', color: 'rgba(255,245,247,0.8)' }}>
+                          {prod.sizes ? prod.sizes.join(', ') : 'Standard'}
+                        </div>
+                        {prod.colors && prod.colors.length > 0 && (
+                          <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+                            {prod.colors.map((c, i) => (
+                              <span
+                                key={i}
+                                title={c.name}
+                                style={{
+                                  width: '10px',
+                                  height: '10px',
+                                  borderRadius: '50%',
+                                  backgroundColor: c.hex || '#6B1736',
+                                  display: 'inline-block',
+                                  border: '1px solid rgba(255,255,255,0.3)'
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        {prod.tag ? (
+                          <span className="badge badge-burgundy">{prod.tag}</span>
+                        ) : (
+                          <span style={{ color: 'rgba(255,240,243,0.4)', fontSize: '0.8rem' }}>—</span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', gap: '8px' }}>
+                          <button
+                            className="btn-icon btn-secondary"
+                            style={{ width: '36px', height: '36px' }}
+                            title="Preview on Storefront"
+                            onClick={() => setSelectedProductDetail(prod)}
+                          >
+                            <ExternalLink size={15} />
+                          </button>
+                          <button
+                            className="btn-icon btn-secondary"
+                            style={{ width: '36px', height: '36px' }}
+                            title="Edit Product Details & Photos"
+                            onClick={() => setEditingProduct(prod)}
+                          >
+                            <Edit2 size={15} />
+                          </button>
+                          <button
+                            className="btn-icon btn-danger"
+                            style={{ width: '36px', height: '36px' }}
+                            title="Delete Product"
+                            onClick={() => handleDelete(prod)}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          )}
-        </div>
+
+            {/* 2. MOBILE VIEW: Responsive Product Cards */}
+            <div className="admin-mobile-cards-list">
+              {filteredProducts.map(prod => (
+                <div key={prod.id} className="admin-mobile-product-card">
+                  <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                    <img
+                      src={(prod.images && prod.images[0]) || 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=300&q=80'}
+                      alt={prod.name}
+                      style={{
+                        width: '74px',
+                        height: '92px',
+                        borderRadius: '8px',
+                        objectFit: 'cover',
+                        border: '1px solid rgba(232, 165, 152, 0.25)',
+                        backgroundColor: '#19040E',
+                        flexShrink: 0
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                        <h4 style={{ fontSize: '1rem', color: '#FFFFFF', margin: 0, fontWeight: 600, wordBreak: 'break-word' }}>
+                          {prod.name}
+                        </h4>
+                        {prod.tag && (
+                          <span className="badge badge-burgundy" style={{ fontSize: '0.7rem', padding: '2px 8px', flexShrink: 0 }}>
+                            {prod.tag}
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ fontSize: '0.78rem', color: '#E8A598', marginTop: '2px' }}>
+                        {prod.category} · {prod.id}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 700, color: '#FFF5F7', fontSize: '1.05rem' }}>
+                          {formatCurrency(prod.price)}
+                        </span>
+                        {prod.originalPrice && (
+                          <span style={{ fontSize: '0.8rem', color: 'rgba(255,240,243,0.4)', textDecoration: 'line-through' }}>
+                            {formatCurrency(prod.originalPrice)}
+                          </span>
+                        )}
+                        <span
+                          style={{
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            backgroundColor: prod.stock <= 3 ? 'rgba(248, 113, 113, 0.15)' : 'rgba(134, 239, 172, 0.15)',
+                            color: prod.stock <= 3 ? '#F87171' : '#86EFAC',
+                            marginLeft: 'auto'
+                          }}
+                        >
+                          {prod.stock} in stock
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mobile Action Buttons Bar */}
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr auto',
+                      gap: '8px',
+                      marginTop: '14px',
+                      paddingTop: '12px',
+                      borderTop: '1px solid rgba(232, 165, 152, 0.1)'
+                    }}
+                  >
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      style={{ justifyContent: 'center', gap: '6px', minHeight: '44px' }}
+                      onClick={() => setEditingProduct(prod)}
+                    >
+                      <Edit2 size={15} />
+                      <span>Edit Piece</span>
+                    </button>
+
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      style={{ justifyContent: 'center', gap: '6px', minHeight: '44px' }}
+                      onClick={() => setSelectedProductDetail(prod)}
+                    >
+                      <ExternalLink size={15} />
+                      <span>Preview</span>
+                    </button>
+
+                    <button
+                      className="btn btn-danger btn-sm"
+                      style={{ padding: '0 14px', minHeight: '44px', minWidth: '44px' }}
+                      title="Delete Product"
+                      onClick={() => handleDelete(prod)}
+                      aria-label="Delete product"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div
+            style={{
+              padding: '50px 20px',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '14px'
+            }}
+          >
+            <Package size={44} color="#E8A598" />
+            <div style={{ fontWeight: 600, color: '#FFFFFF', fontSize: '1.1rem' }}>
+              {products.length === 0 ? 'No Products in Store Catalog' : 'No Products Matching Search'}
+            </div>
+            <p style={{ color: 'rgba(255, 240, 243, 0.7)', maxWidth: '400px', fontSize: '0.88rem' }}>
+              {products.length === 0
+                ? 'Your store is ready for your unique collection! Click below to create your first fashion piece or restore sample showcase items.'
+                : 'Try clearing your search query to view all items.'}
+            </p>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button className="btn btn-primary btn-sm" onClick={() => setIsCreateModalOpen(true)}>
+                <Plus size={15} />
+                <span>Add First Fashion Piece</span>
+              </button>
+              {products.length === 0 && (
+                <button className="btn btn-secondary btn-sm" onClick={handleRestoreDemo}>
+                  <RotateCcw size={15} />
+                  <span>Restore Demo Items</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Create Modal */}
@@ -403,7 +519,7 @@ export const AdminProducts = () => {
               </h3>
             </div>
             <p style={{ color: 'rgba(255, 240, 243, 0.75)', fontSize: '0.88rem', marginBottom: '16px' }}>
-              You can copy this product catalog array for backups, or paste it directly into <code>src/data/initialProducts.js</code> to permanently hardcode it into git defaults.
+              You can copy this product catalog array for backups, or paste it directly into <code>src/data/initialProducts.js</code> to hardcode it into git defaults.
             </p>
 
             <div style={{ position: 'relative', marginBottom: '16px' }}>
@@ -421,7 +537,7 @@ export const AdminProducts = () => {
               />
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', flexWrap: 'wrap' }}>
               <button className="btn btn-secondary" onClick={() => setIsExportModalOpen(false)}>
                 Close
               </button>
@@ -468,7 +584,7 @@ export const AdminProducts = () => {
                 }}
               />
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', flexWrap: 'wrap' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setIsImportModalOpen(false)}>
                   Cancel
                 </button>

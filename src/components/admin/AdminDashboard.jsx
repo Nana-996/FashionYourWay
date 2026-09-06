@@ -2,6 +2,7 @@ import React from 'react';
 import { useStore } from '../../context/StoreContext';
 import { AdminOrders } from './AdminOrders';
 import { AdminProducts } from './AdminProducts';
+import { AdminContentEditor } from './AdminContentEditor';
 import { AdminStoreSettings } from './AdminStoreSettings';
 import { AdminLogoStudio } from './AdminLogoStudio';
 import { BrandLogo } from '../BrandLogo';
@@ -9,21 +10,19 @@ import {
   ShoppingBag,
   Package,
   Clock,
-  ShieldCheck,
   TrendingUp,
   Settings,
   Eye,
-  Store,
   Layers,
   Lock,
-  Sparkles
+  Sparkles,
+  Type
 } from 'lucide-react';
 
 export const AdminDashboard = () => {
   const {
     orders,
     products,
-    storeInfo,
     activeAdminTab,
     setActiveAdminTab,
     setCurrentView,
@@ -35,7 +34,6 @@ export const AdminDashboard = () => {
   const totalRevenue = orders.reduce((sum, ord) => sum + (ord.status !== 'Cancelled' ? ord.total : 0), 0);
   const pendingOrdersCount = orders.filter(o => o.status === 'Pending').length;
   const processingOrdersCount = orders.filter(o => o.status === 'Processing' || o.status === 'Confirmed').length;
-  const deliveredOrdersCount = orders.filter(o => o.status === 'Delivered').length;
 
   return (
     <div className="admin-view">
@@ -47,12 +45,12 @@ export const AdminDashboard = () => {
               <BrandLogo size="md" showSub={false} />
               <span className="admin-header-badge">Executive Admin Portal</span>
             </div>
-            <p style={{ color: 'rgba(255, 240, 243, 0.7)', marginTop: '6px' }}>
-              Private management portal for Customer Orders, Catalog Inventory, Visual Branding & Boutique Settings.
+            <p style={{ color: 'rgba(255, 240, 243, 0.7)', marginTop: '6px', fontSize: '0.88rem' }}>
+              Private management portal for Customer Orders, Catalog Inventory, Website Copy & Boutique Settings.
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <button
               className="btn btn-secondary btn-sm"
               onClick={() => {
@@ -62,7 +60,7 @@ export const AdminDashboard = () => {
               style={{ gap: '8px' }}
             >
               <Eye size={16} />
-              <span>View Customer Storefront</span>
+              <span>View Storefront</span>
             </button>
 
             <button
@@ -81,7 +79,7 @@ export const AdminDashboard = () => {
         <div className="admin-kpi-grid">
           <div className="admin-kpi-card">
             <div className="admin-kpi-icon">
-              <TrendingUp size={26} color="#86EFAC" />
+              <TrendingUp size={24} color="#86EFAC" />
             </div>
             <div>
               <div className="admin-kpi-val">{formatCurrency(totalRevenue)}</div>
@@ -91,7 +89,7 @@ export const AdminDashboard = () => {
 
           <div className="admin-kpi-card">
             <div className="admin-kpi-icon">
-              <ShoppingBag size={26} color="#E8A598" />
+              <ShoppingBag size={24} color="#E8A598" />
             </div>
             <div>
               <div className="admin-kpi-val">{orders.length}</div>
@@ -101,7 +99,7 @@ export const AdminDashboard = () => {
 
           <div className="admin-kpi-card">
             <div className="admin-kpi-icon" style={{ borderColor: 'rgba(234, 179, 8, 0.3)', background: 'rgba(234, 179, 8, 0.12)' }}>
-              <Clock size={26} color="#FDE047" />
+              <Clock size={24} color="#FDE047" />
             </div>
             <div>
               <div className="admin-kpi-val">{pendingOrdersCount}</div>
@@ -111,7 +109,7 @@ export const AdminDashboard = () => {
 
           <div className="admin-kpi-card">
             <div className="admin-kpi-icon">
-              <Layers size={26} color="#D8B4FE" />
+              <Layers size={24} color="#D8B4FE" />
             </div>
             <div>
               <div className="admin-kpi-val">{processingOrdersCount}</div>
@@ -119,9 +117,9 @@ export const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="admin-kpi-card">
+          <div className="admin-kpi-card admin-kpi-card-wide">
             <div className="admin-kpi-icon">
-              <Package size={26} color="#D4AF37" />
+              <Package size={24} color="#D4AF37" />
             </div>
             <div>
               <div className="admin-kpi-val">{products.length}</div>
@@ -130,22 +128,22 @@ export const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Tab Navigation */}
+        {/* Tab Navigation (Scrollable on mobile) */}
         <div className="admin-nav-tabs">
           <button
             className={`admin-tab-btn ${activeAdminTab === 'orders' ? 'active' : ''}`}
             onClick={() => setActiveAdminTab('orders')}
           >
-            <ShoppingBag size={18} />
-            <span>Order Management ({orders.length})</span>
+            <ShoppingBag size={17} />
+            <span>Orders ({orders.length})</span>
             {pendingOrdersCount > 0 && (
               <span
                 style={{
                   background: '#EAB308',
                   color: '#14030B',
-                  fontSize: '0.72rem',
+                  fontSize: '0.7rem',
                   fontWeight: 700,
-                  padding: '2px 7px',
+                  padding: '1px 6px',
                   borderRadius: '999px',
                   marginLeft: '4px'
                 }}
@@ -159,24 +157,32 @@ export const AdminDashboard = () => {
             className={`admin-tab-btn ${activeAdminTab === 'products' ? 'active' : ''}`}
             onClick={() => setActiveAdminTab('products')}
           >
-            <Package size={18} />
-            <span>Product Catalog & Photos ({products.length})</span>
+            <Package size={17} />
+            <span>Products & Photos ({products.length})</span>
+          </button>
+
+          <button
+            className={`admin-tab-btn ${activeAdminTab === 'text-editor' ? 'active' : ''}`}
+            onClick={() => setActiveAdminTab('text-editor')}
+          >
+            <Type size={17} />
+            <span>Site Text & Copy Editor</span>
           </button>
 
           <button
             className={`admin-tab-btn ${activeAdminTab === 'logo' ? 'active' : ''}`}
             onClick={() => setActiveAdminTab('logo')}
           >
-            <Sparkles size={18} />
-            <span>Brand Logo & Emblem Studio</span>
+            <Sparkles size={17} />
+            <span>Brand Logo Studio</span>
           </button>
 
           <button
             className={`admin-tab-btn ${activeAdminTab === 'settings' ? 'active' : ''}`}
             onClick={() => setActiveAdminTab('settings')}
           >
-            <Settings size={18} />
-            <span>Store Profile, Location & Contacts</span>
+            <Settings size={17} />
+            <span>Location & Contacts</span>
           </button>
         </div>
 
@@ -184,6 +190,7 @@ export const AdminDashboard = () => {
         <div className="admin-tab-content">
           {activeAdminTab === 'orders' && <AdminOrders />}
           {activeAdminTab === 'products' && <AdminProducts />}
+          {activeAdminTab === 'text-editor' && <AdminContentEditor />}
           {activeAdminTab === 'logo' && <AdminLogoStudio />}
           {activeAdminTab === 'settings' && <AdminStoreSettings />}
         </div>

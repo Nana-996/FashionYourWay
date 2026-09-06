@@ -1,40 +1,45 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../context/StoreContext';
 import { ProductCard } from './ProductCard';
-import { Search, Sparkles, Filter, SlidersHorizontal } from 'lucide-react';
+import { Search, Sparkles, SlidersHorizontal } from 'lucide-react';
 
 export const ProductCatalog = () => {
-  const { products } = useStore();
+  const { products, storeInfo } = useStore();
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('featured');
 
-  // Extract unique categories
+  // Extract unique categories safely
   const categories = useMemo(() => {
-    const set = new Set(products.map(p => p.category));
+    const validCats = products
+      .map(p => p.category)
+      .filter(Boolean);
+    const set = new Set(validCats);
     return ['All', ...Array.from(set)];
   }, [products]);
 
-  // Filter & Sort Logic
+  // Filter & Sort Logic with complete null-safety
   const filteredProducts = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
     return products
       .filter(product => {
+        if (!product) return false;
         const matchesCategory =
           selectedCategory === 'All' || product.category === selectedCategory;
         const matchesSearch =
-          !searchQuery.trim() ||
-          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.colors?.some(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
+          !q ||
+          (product.name && product.name.toLowerCase().includes(q)) ||
+          (product.description && product.description.toLowerCase().includes(q)) ||
+          (product.category && product.category.toLowerCase().includes(q)) ||
+          (Array.isArray(product.colors) &&
+            product.colors.some(c => c.name && c.name.toLowerCase().includes(q)));
         return matchesCategory && matchesSearch;
       })
       .sort((a, b) => {
-        if (sortBy === 'price-low') return a.price - b.price;
-        if (sortBy === 'price-high') return b.price - a.price;
+        if (sortBy === 'price-low') return (a.price || 0) - (b.price || 0);
+        if (sortBy === 'price-high') return (b.price || 0) - (a.price || 0);
         if (sortBy === 'rating') return (b.rating || 5) - (a.rating || 5);
-        // default featured
         if (a.isFeatured && !b.isFeatured) return -1;
         if (!a.isFeatured && b.isFeatured) return 1;
         return 0;
@@ -48,7 +53,14 @@ export const ProductCatalog = () => {
         <div className="catalog-header">
           <div className="catalog-title-row">
             <div>
-              <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.4rem)' }}>The Collection</h2>
+              <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.4rem)' }}>
+                {storeInfo.catalogTitle || 'The Collection'}
+              </h2>
+              {storeInfo.catalogSubtitle && (
+                <p style={{ color: 'rgba(255, 240, 243, 0.7)', fontSize: '0.92rem', marginTop: '4px' }}>
+                  {storeInfo.catalogSubtitle}
+                </p>
+              )}
             </div>
 
             {/* Search Bar */}
@@ -56,7 +68,7 @@ export const ProductCatalog = () => {
               <Search size={16} color="#E8A598" />
               <input
                 type="text"
-                placeholder="Search pieces, colors, fabrics..."
+                placeholder={storeInfo.catalogSearchPlaceholder || 'Search pieces, colors, fabrics...'}
                 className="catalog-search-input"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
@@ -64,7 +76,8 @@ export const ProductCatalog = () => {
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  style={{ background: 'none', border: 'none', color: '#E8A598', cursor: 'pointer' }}
+                  style={{ background: 'none', border: 'none', color: '#E8A598', cursor: 'pointer', padding: '4px' }}
+                  aria-label="Clear search"
                 >
                   ✕
                 </button>
@@ -131,9 +144,12 @@ export const ProductCatalog = () => {
             <Sparkles size={40} color="#E8A598" />
             {products.length === 0 ? (
               <>
-                <h3 style={{ color: '#FFFFFF', fontSize: '1.4rem' }}>Catalog Currently Being Curated</h3>
-                <p style={{ color: 'rgba(255, 240, 243, 0.75)', maxWidth: '420px' }}>
-                  Our runway pieces are being prepared. Visit the Admin Portal to add and manage your fashion pieces.
+                <h3 style={{ color: '#FFFFFF', fontSize: '1.4rem' }}>
+                  {storeInfo.catalogEmptyTitle || 'Catalog Currently Being Curated'}
+                </h3>
+                <p style={{ color: 'rgba(255, 240, 243, 0.75)', maxWidth: '440px' }}>
+                  {storeInfo.catalogEmptyDesc ||
+                    'Our runway pieces are being prepared. Visit the Admin Portal to add and manage your fashion pieces.'}
                 </p>
               </>
             ) : (

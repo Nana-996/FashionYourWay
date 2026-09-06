@@ -76,13 +76,16 @@ export const StoreProvider = ({ children }) => {
     }
   });
 
-  // 3. Orders State
+  // 3. Orders State - Clean baseline for live customer orders
   const [orders, setOrders] = useState(() => {
     try {
       const saved = syncStorageGet(STORAGE_KEYS.ORDERS, null) || syncStorageGet('fyw_orders_v3_gh', null);
-      return saved && Array.isArray(saved) ? saved : initialOrders;
+      if (saved && Array.isArray(saved)) {
+        return saved.filter(o => o.id !== 'FYW-84920' && o.id !== 'FYW-71403' && o.id !== 'FYW-62901');
+      }
+      return initialOrders || [];
     } catch {
-      return initialOrders;
+      return [];
     }
   });
 

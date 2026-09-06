@@ -14,7 +14,9 @@ import {
   Upload,
   Copy,
   Check,
-  X
+  X,
+  RefreshCw,
+  Globe
 } from 'lucide-react';
 
 export const AdminProducts = () => {
@@ -22,8 +24,10 @@ export const AdminProducts = () => {
     products,
     deleteProduct,
     clearAllProducts,
-    restoreDemoProducts,
     importProducts,
+    cloudSyncStatus,
+    lastCloudSyncTime,
+    syncWithCloudNow,
     setSelectedProductDetail,
     formatCurrency,
     showToast
@@ -55,14 +59,8 @@ export const AdminProducts = () => {
   };
 
   const handleClearAll = () => {
-    if (window.confirm('Are you sure you want to remove ALL placeholder products? This will give you a clean slate to add your own pieces.')) {
+    if (window.confirm('Are you sure you want to remove ALL store products? This will clear your catalog locally and from the live website.')) {
       clearAllProducts();
-    }
-  };
-
-  const handleRestoreDemo = () => {
-    if (window.confirm('Restore the original sample showcase catalog? Any custom products currently not exported will be replaced.')) {
-      restoreDemoProducts();
     }
   };
 
@@ -95,7 +93,7 @@ export const AdminProducts = () => {
 
   return (
     <div>
-      {/* Top Banner Status & Actions */}
+      {/* Top Banner: Global Cloud Synchronization Status & Actions */}
       <div
         className="glass-panel"
         style={{
@@ -110,27 +108,58 @@ export const AdminProducts = () => {
           background: 'rgba(20, 3, 11, 0.65)'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
             style={{
-              width: '10px',
-              height: '10px',
+              width: '12px',
+              height: '12px',
               borderRadius: '50%',
-              backgroundColor: '#86EFAC',
-              boxShadow: '0 0 10px #86EFAC'
+              backgroundColor:
+                cloudSyncStatus === 'syncing'
+                  ? '#FBBF24'
+                  : cloudSyncStatus === 'error'
+                  ? '#F87171'
+                  : '#86EFAC',
+              boxShadow:
+                cloudSyncStatus === 'syncing'
+                  ? '0 0 10px #FBBF24'
+                  : cloudSyncStatus === 'error'
+                  ? '0 0 10px #F87171'
+                  : '0 0 10px #86EFAC',
+              flexShrink: 0
             }}
           />
           <div>
-            <div style={{ fontWeight: 600, color: '#FFFFFF', fontSize: '0.92rem' }}>
-              Live Storefront Synchronization: Active
+            <div style={{ fontWeight: 600, color: '#FFFFFF', fontSize: '0.94rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>
+                {cloudSyncStatus === 'syncing'
+                  ? 'Global Cloud: Synchronizing...'
+                  : cloudSyncStatus === 'error'
+                  ? 'Global Cloud: Reconnecting (Saved Locally)'
+                  : 'Global Cloud: Connected & Synced Worldwide'}
+              </span>
             </div>
-            <div style={{ fontSize: '0.78rem', color: 'rgba(255, 240, 243, 0.7)' }}>
-              All additions, edits, and removals automatically persist and reflect live for customers.
+            <div style={{ fontSize: '0.78rem', color: 'rgba(255, 240, 243, 0.75)' }}>
+              {cloudSyncStatus === 'syncing'
+                ? 'Uploading your latest store pieces to all visitors across the globe...'
+                : lastCloudSyncTime
+                ? `Active worldwide. Every visitor across any device sees your live products (${products.length} live).`
+                : 'All additions and edits automatically sync live to all customers across any device.'}
             </div>
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={syncWithCloudNow}
+            style={{ gap: '6px' }}
+            title="Force immediate synchronization with global live storefront"
+          >
+            <RefreshCw size={14} className={cloudSyncStatus === 'syncing' ? 'spin' : ''} />
+            <span>{cloudSyncStatus === 'syncing' ? 'Syncing...' : 'Sync with Live Site'}</span>
+          </button>
+
           <button
             className="btn btn-secondary btn-sm"
             onClick={() => setIsExportModalOpen(true)}
@@ -151,25 +180,15 @@ export const AdminProducts = () => {
             <span>Import</span>
           </button>
 
-          {products.length > 0 ? (
+          {products.length > 0 && (
             <button
               className="btn btn-danger btn-sm"
               onClick={handleClearAll}
               style={{ gap: '6px' }}
-              title="Remove all placeholder items in 1 click"
+              title="Remove all products in 1 click"
             >
               <Trash2 size={14} />
-              <span>Clear Placeholders</span>
-            </button>
-          ) : (
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={handleRestoreDemo}
-              style={{ gap: '6px' }}
-              title="Load demo showroom catalog"
-            >
-              <RotateCcw size={14} />
-              <span>Restore Demo Items</span>
+              <span>Clear All</span>
             </button>
           )}
         </div>
@@ -214,25 +233,6 @@ export const AdminProducts = () => {
           <div style={{ fontWeight: 600, color: '#FFFFFF', fontSize: '0.96rem' }}>
             Store Catalog Inventory ({products.length} Total Pieces{searchQuery ? ` · ${filteredProducts.length} Matching` : ''})
           </div>
-          {products.length > 0 && (
-            <button
-              onClick={handleRestoreDemo}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#E8A598',
-                fontSize: '0.8rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                textDecoration: 'underline'
-              }}
-            >
-              <RotateCcw size={13} />
-              <span>Reset to Demo Items</span>
-            </button>
-          )}
         </div>
 
         {filteredProducts.length > 0 ? (
@@ -470,9 +470,9 @@ export const AdminProducts = () => {
             <div style={{ fontWeight: 600, color: '#FFFFFF', fontSize: '1.1rem' }}>
               {products.length === 0 ? 'No Products in Store Catalog' : 'No Products Matching Search'}
             </div>
-            <p style={{ color: 'rgba(255, 240, 243, 0.7)', maxWidth: '400px', fontSize: '0.88rem' }}>
+            <p style={{ color: 'rgba(255, 240, 243, 0.7)', maxWidth: '420px', fontSize: '0.88rem' }}>
               {products.length === 0
-                ? 'Your store is ready for your unique collection! Click below to create your first fashion piece or restore sample showcase items.'
+                ? 'Your store is ready for your unique collection! All placeholder items have been removed. Click below to add your first fashion piece.'
                 : 'Try clearing your search query to view all items.'}
             </p>
             <div style={{ display: 'flex', gap: '10px', marginTop: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -480,12 +480,6 @@ export const AdminProducts = () => {
                 <Plus size={15} />
                 <span>Add First Fashion Piece</span>
               </button>
-              {products.length === 0 && (
-                <button className="btn btn-secondary btn-sm" onClick={handleRestoreDemo}>
-                  <RotateCcw size={15} />
-                  <span>Restore Demo Items</span>
-                </button>
-              )}
             </div>
           </div>
         )}

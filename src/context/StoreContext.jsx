@@ -9,29 +9,53 @@ import {
   idbGet,
   idbSet
 } from '../utils/storage';
+import { fetchCloudData, saveCloudData } from '../utils/cloudSync';
 import confetti from 'canvas-confetti';
 
 const StoreContext = createContext();
 
 const STORAGE_KEYS = {
-  PRODUCTS: 'fyw_products_catalog_v6',
+  PRODUCTS: 'fyw_products_catalog_v7',
   STORE_INFO: 'fyw_store_info_v4_gh',
   ORDERS: 'fyw_orders_v4_gh',
   CART: 'fyw_cart_v4_gh',
   WISHLIST: 'fyw_wishlist_v4_gh'
 };
 
+// Filter out old hardcoded placeholder dresses so user browsers get a 100% clean catalog
+const isLegacyDemoProduct = (p) => {
+  if (!p || !p.id) return false;
+  const demoIds = ['FYW-PROD-001', 'FYW-PROD-002', 'FYW-PROD-003', 'FYW-PROD-004', 'FYW-PROD-005', 'FYW-PROD-006', 'FYW-PROD-007', 'FYW-PROD-008'];
+  return demoIds.includes(p.id) && (
+    p.name?.includes('Aurelia') ||
+    p.name?.includes('Seraphina') ||
+    p.name?.includes('Elysian') ||
+    p.name?.includes('Valeria') ||
+    p.name?.includes('Sovereign') ||
+    p.name?.includes('Marquise') ||
+    p.name?.includes('Celeste') ||
+    p.name?.includes('Royale Velvet')
+  );
+};
+
 export const StoreProvider = ({ children }) => {
-  // 1. Products State - Persistent with IndexedDB + LocalStorage
+  // Cloud Sync Status: 'idle' | 'syncing' | 'synced' | 'error'
+  const [cloudSyncStatus, setCloudSyncStatus] = useState('idle');
+  const [lastCloudSyncTime, setLastCloudSyncTime] = useState(null);
+
+  // 1. Products State - Persistent with IndexedDB + LocalStorage + Global Cloud
   const [products, setProducts] = useState(() => {
     try {
-      const saved = syncStorageGet(STORAGE_KEYS.PRODUCTS, null) || syncStorageGet('fyw_products_catalog_v5', null);
-      if (saved && Array.isArray(saved) && saved.length > 0) {
-        return saved;
+      const saved = syncStorageGet(STORAGE_KEYS.PRODUCTS, null) ||
+                    syncStorageGet('fyw_products_catalog_v6', null) ||
+                    syncStorageGet('fyw_products_catalog_v5', null);
+      if (saved && Array.isArray(saved)) {
+        const cleaned = saved.filter(p => !isLegacyDemoProduct(p));
+        return cleaned;
       }
-      return initialProducts;
+      return initialProducts || [];
     } catch {
-      return initialProducts;
+      return [];
     }
   });
 
@@ -121,20 +145,17 @@ export const StoreProvider = ({ children }) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  // Async Hydration from IndexedDB on startup (covers any items saved when LocalStorage was at quota)
+  // Async Hydration from IndexedDB & Global Cloud on startup
   useEffect(() => {
     let isMounted = true;
+
+    // 1. Immediate local hydration from IndexedDB
     (async () => {
       try {
         const idbProds = await idbGet(STORAGE_KEYS.PRODUCTS);
         if (isMounted && Array.isArray(idbProds) && idbProds.length > 0) {
-          // If IndexedDB has catalog items, ensure state has them
-          setProducts(prev => {
-            if (idbProds.length >= prev.length) {
-              return idbProds;
-            }
-            return prev;
-          });
+          const cleaned = idbProds.filter(p => !isLegacyDemoProduct(p));
+          setProducts(prev => (cleaned.length >= prev.length ? cleaned : prev));
         }
 
         const idbInfo = await idbGet(STORAGE_KEYS.STORE_INFO);
@@ -152,6 +173,41 @@ export const StoreProvider = ({ children }) => {
         }
       } catch (err) {
         console.warn('IndexedDB initial hydration note:', err);
+      }
+
+      // 2. Asynchronously fetch live global catalog from Cloud Sync
+      try {
+        if (isMounted) setCloudSyncStatus('syncing');
+        const cloudResult = await fetchCloudData();
+
+        if (isMounted && cloudResult.success) {
+          if (Array.isArray(cloudResult.products)) {
+            const cleanCloudProds = cloudResult.products.filter(p => !isLegacyDemoProduct(p));
+            // Cloud is authoritative source of truth for global visitors
+            setProducts(cleanCloudProds);
+            resilientStorageSet(STORAGE_KEYS.PRODUCTS, cleanCloudProds);
+          }
+
+          if (cloudResult.storeInfo && typeof cloudResult.storeInfo === 'object') {
+            setStoreInfo(prev => ({
+              ...prev,
+              ...cloudResult.storeInfo,
+              currencySymbol: 'GH₵'
+            }));
+            resilientStorageSet(STORAGE_KEYS.STORE_INFO, {
+              ...cloudResult.storeInfo,
+              currencySymbol: 'GH₵'
+            });
+          }
+
+          setCloudSyncStatus('synced');
+          setLastCloudSyncTime(cloudResult.updatedAt || new Date().toISOString());
+        } else {
+          if (isMounted) setCloudSyncStatus('idle');
+        }
+      } catch (cloudErr) {
+        console.warn('Initial cloud sync fetch notice:', cloudErr);
+        if (isMounted) setCloudSyncStatus('error');
       }
     })();
 
@@ -463,7 +519,53 @@ export const StoreProvider = ({ children }) => {
     showToast('Notes Saved', `Updated admin notes for ${orderId}`, 'info');
   };
 
-  // Robust Product CRUD (Admin) - crash-proof and multi-item ready
+  // Push products & store info to global cloud storage (multi-device live persistence)
+  const pushToCloud = useCallback(async (productsToSync, storeInfoToSync) => {
+    try {
+      setCloudSyncStatus('syncing');
+      const res = await saveCloudData({
+        products: productsToSync,
+        storeInfo: storeInfoToSync || storeInfo
+      });
+      if (res.success) {
+        setCloudSyncStatus('synced');
+        setLastCloudSyncTime(res.timestamp || new Date().toISOString());
+        return true;
+      } else {
+        setCloudSyncStatus('error');
+        return false;
+      }
+    } catch (err) {
+      console.warn('pushToCloud error:', err);
+      setCloudSyncStatus('error');
+      return false;
+    }
+  }, [storeInfo]);
+
+  // Manual trigger for Admin to sync with Global Live Storefront
+  const syncWithCloudNow = useCallback(async () => {
+    setCloudSyncStatus('syncing');
+    showToast('Syncing with Global Cloud...', 'Connecting to worldwide catalog server', 'info');
+    try {
+      const res = await saveCloudData({ products, storeInfo });
+      if (res.success) {
+        setCloudSyncStatus('synced');
+        setLastCloudSyncTime(res.timestamp || new Date().toISOString());
+        showToast('Global Live Sync Complete ✨', 'Your latest catalog is now live for all visitors worldwide!', 'success');
+        return true;
+      } else {
+        setCloudSyncStatus('error');
+        showToast('Sync Notice', `Could not connect to cloud server (${res.error || 'Network'}). Changes remain saved locally.`, 'warning');
+        return false;
+      }
+    } catch (err) {
+      setCloudSyncStatus('error');
+      showToast('Sync Failed', 'Please check your internet connection.', 'error');
+      return false;
+    }
+  }, [products, storeInfo, showToast]);
+
+  // Robust Product CRUD (Admin) - crash-proof and multi-device live synced
   const addProduct = (newProductData) => {
     const uniqueSuffix = Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
     const newId = newProductData.id || `FYW-PROD-${uniqueSuffix}`;
@@ -494,14 +596,19 @@ export const StoreProvider = ({ children }) => {
       createdAt: new Date().toISOString()
     };
 
-    setProducts(prev => [sanitizedProduct, ...prev]);
+    setProducts(prev => {
+      const updated = [sanitizedProduct, ...prev];
+      pushToCloud(updated);
+      return updated;
+    });
+
     showToast('Product Created ✨', `${sanitizedProduct.name} is now live in the store!`, 'success');
     return sanitizedProduct;
   };
 
   const updateProduct = (id, updatedFields) => {
-    setProducts(prev =>
-      prev.map(p => {
+    setProducts(prev => {
+      const updated = prev.map(p => {
         if (p.id !== id) return p;
         return {
           ...p,
@@ -515,30 +622,41 @@ export const StoreProvider = ({ children }) => {
             ? updatedFields.images.filter(Boolean)
             : p.images
         };
-      })
-    );
+      });
+      pushToCloud(updated);
+      return updated;
+    });
     showToast('Product Updated ✨', 'Product changes saved and live on site.', 'success');
   };
 
   const deleteProduct = (id) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
+    setProducts(prev => {
+      const updated = prev.filter(p => p.id !== id);
+      pushToCloud(updated);
+      return updated;
+    });
     showToast('Product Removed', 'Product was deleted from the store catalog.', 'info');
   };
 
   const clearAllProducts = () => {
     setProducts([]);
-    showToast('Catalog Cleared', 'All placeholder items have been removed.', 'info');
+    pushToCloud([]);
+    resilientStorageRemove(STORAGE_KEYS.PRODUCTS);
+    showToast('Catalog Cleared', 'All items have been removed locally and from the live site.', 'info');
   };
 
   const restoreDemoProducts = () => {
-    setProducts(initialProducts);
-    showToast('Demo Catalog Restored', 'Restored sample showcase collection.', 'success');
+    setProducts([]);
+    pushToCloud([]);
+    showToast('Catalog Reset', 'Catalog reset to clean baseline.', 'info');
   };
 
   const importProducts = (newProductsList) => {
     if (Array.isArray(newProductsList) && newProductsList.length > 0) {
-      setProducts(newProductsList);
-      showToast('Catalog Imported ✨', `Successfully loaded ${newProductsList.length} products into the store!`, 'success');
+      const cleaned = newProductsList.filter(p => !isLegacyDemoProduct(p));
+      setProducts(cleaned);
+      pushToCloud(cleaned);
+      showToast('Catalog Imported ✨', `Successfully loaded ${cleaned.length} products into the store!`, 'success');
       return true;
     } else {
       showToast('Import Failed', 'Invalid product data format.', 'error');
@@ -548,25 +666,29 @@ export const StoreProvider = ({ children }) => {
 
   // Store Settings & Website Text Updates (Admin)
   const updateStoreInfo = (newInfo) => {
-    setStoreInfo(prev => ({
-      ...prev,
+    const updated = {
+      ...storeInfo,
       ...newInfo,
       currencySymbol: 'GH₵'
-    }));
+    };
+    setStoreInfo(updated);
+    pushToCloud(products, updated);
     showToast('Store Profile Updated', 'Public business details have been updated.', 'success');
   };
 
   const updateStoreText = (textUpdates) => {
-    setStoreInfo(prev => ({
-      ...prev,
+    const updated = {
+      ...storeInfo,
       ...textUpdates
-    }));
+    };
+    setStoreInfo(updated);
+    pushToCloud(products, updated);
     showToast('Website Text Saved ✨', 'Storefront wording has been updated live!', 'success');
   };
 
   // Reset to demo defaults
   const resetDemoData = () => {
-    setProducts(initialProducts);
+    setProducts([]);
     setStoreInfo(initialStoreInfo);
     setOrders(initialOrders);
     setCart([]);
@@ -574,7 +696,8 @@ export const StoreProvider = ({ children }) => {
     resilientStorageRemove(STORAGE_KEYS.STORE_INFO);
     resilientStorageRemove(STORAGE_KEYS.ORDERS);
     resilientStorageRemove(STORAGE_KEYS.CART);
-    showToast('Data Reset', 'Restored original demo catalog & store details', 'info');
+    pushToCloud([]);
+    showToast('Data Reset', 'Store cleared to fresh state', 'info');
   };
 
   return (
@@ -587,6 +710,9 @@ export const StoreProvider = ({ children }) => {
         clearAllProducts,
         restoreDemoProducts,
         importProducts,
+        cloudSyncStatus,
+        lastCloudSyncTime,
+        syncWithCloudNow,
         storeInfo,
         updateStoreInfo,
         updateStoreText,

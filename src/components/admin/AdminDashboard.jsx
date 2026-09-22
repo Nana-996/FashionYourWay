@@ -5,6 +5,7 @@ import { AdminProducts } from './AdminProducts';
 import { AdminContentEditor } from './AdminContentEditor';
 import { AdminStoreSettings } from './AdminStoreSettings';
 import { AdminLogoStudio } from './AdminLogoStudio';
+import { AdminColorStudio } from './AdminColorStudio';
 import { BrandLogo } from '../BrandLogo';
 import {
   ShoppingBag,
@@ -16,7 +17,8 @@ import {
   Layers,
   Lock,
   Sparkles,
-  Type
+  Type,
+  Palette
 } from 'lucide-react';
 
 export const AdminDashboard = () => {
@@ -178,6 +180,14 @@ export const AdminDashboard = () => {
           </button>
 
           <button
+            className={`admin-tab-btn ${activeAdminTab === 'colors' ? 'active' : ''}`}
+            onClick={() => setActiveAdminTab('colors')}
+          >
+            <Palette size={17} />
+            <span>Site Colors & Theme</span>
+          </button>
+
+          <button
             className={`admin-tab-btn ${activeAdminTab === 'settings' ? 'active' : ''}`}
             onClick={() => setActiveAdminTab('settings')}
           >
@@ -192,6 +202,7 @@ export const AdminDashboard = () => {
           {activeAdminTab === 'products' && <AdminProducts />}
           {activeAdminTab === 'text-editor' && <AdminContentEditor />}
           {activeAdminTab === 'logo' && <AdminLogoStudio />}
+          {activeAdminTab === 'colors' && <AdminColorStudio />}
           {activeAdminTab === 'settings' && <AdminStoreSettings />}
         </div>
       </div>

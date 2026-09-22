@@ -205,7 +205,7 @@ export const BrandLogo = ({
               fontSize: size === 'xs' ? '1.1rem' : size === 'sm' ? '1.3rem' : size === 'lg' ? '2.1rem' : size === 'xl' ? '2.5rem' : '1.75rem',
               fontWeight: 700,
               letterSpacing: '-0.02em',
-              background: 'linear-gradient(135deg, #FFF5F7 0%, #F5CCD4 40%, #E8A598 80%, #D4AF37 100%)',
+              background: 'var(--brand-name-gradient, linear-gradient(135deg, #FFF5F7 0%, #F5CCD4 40%, #E8A598 80%, #D4AF37 100%))',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               display: 'inline-block'

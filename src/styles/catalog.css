@@ -127,9 +127,9 @@
 /* Product Card */
 .product-card {
   position: relative;
-  background: var(--bg-card);
+  background: var(--card-bg, var(--bg-card));
   border-radius: var(--radius-md);
-  border: var(--border-subtle);
+  border: var(--card-border, var(--border-subtle));
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -262,7 +262,7 @@
 .product-card-price {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--color-cream);
+  color: var(--card-price-color, var(--color-cream));
 }
 
 .product-card-original-price {

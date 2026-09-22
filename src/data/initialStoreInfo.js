@@ -1,3 +1,5 @@
+import { DEFAULT_THEME_COLORS } from '../utils/themeEngine';
+
 export const initialStoreInfo = {
   storeName: "FashionYourWay",
   tagline: "Own the Room. Fashion Designed Your Way.",
@@ -102,5 +104,8 @@ export const initialStoreInfo = {
   logoFilter: 'none',
   logoBgColor: 'glass',
   logoDisplayMode: 'both',
-  logoLayout: 'horizontal'
+  logoLayout: 'horizontal',
+
+  // Site Colors & Dynamic Theme System
+  themeColors: DEFAULT_THEME_COLORS
 };

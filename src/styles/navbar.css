@@ -1,7 +1,7 @@
 /* Top Announcement Bar */
 .announcement-bar {
-  background: linear-gradient(90deg, #38081A 0%, #681635 50%, #38081A 100%);
-  color: var(--color-blush-light);
+  background: var(--announcement-bg, linear-gradient(90deg, #38081A 0%, #681635 50%, #38081A 100%));
+  color: var(--announcement-text, var(--color-blush-light));
   font-size: 0.82rem;
   font-weight: 500;
   padding: 8px 16px;
@@ -26,10 +26,10 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  background: var(--bg-glass);
+  background: var(--navbar-bg, var(--bg-glass));
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: var(--border-subtle);
+  border-bottom: var(--navbar-border, var(--border-subtle));
   transition: all var(--transition-normal);
 }
 
@@ -53,7 +53,7 @@
   font-size: 1.85rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #FFF5F7 0%, #F5CCD4 40%, #E8A598 80%, #D4AF37 100%);
+  background: var(--brand-name-gradient, linear-gradient(135deg, #FFF5F7 0%, #F5CCD4 40%, #E8A598 80%, #D4AF37 100%));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -82,7 +82,7 @@
 .nav-link-btn {
   background: none;
   border: none;
-  color: rgba(255, 245, 247, 0.8);
+  color: var(--nav-link-color, rgba(255, 245, 247, 0.8));
   font-family: var(--font-sans);
   font-size: 0.95rem;
   font-weight: 500;
@@ -95,7 +95,7 @@
 
 .nav-link-btn:hover,
 .nav-link-btn.active {
-  color: var(--color-cream);
+  color: var(--nav-link-active-color, var(--color-cream));
 }
 
 .nav-link-btn::after {
@@ -148,8 +148,8 @@
   position: absolute;
   top: -4px;
   right: -4px;
-  background: linear-gradient(135deg, #B33D62, #E8A598);
-  color: #FFFFFF;
+  background: var(--cart-badge-bg, linear-gradient(135deg, #B33D62, #E8A598));
+  color: var(--cart-badge-text, #FFFFFF);
   font-size: 0.72rem;
   font-weight: 700;
   width: 20px;

@@ -10,6 +10,7 @@ import {
   idbSet
 } from '../utils/storage';
 import { fetchCloudData, saveCloudData } from '../utils/cloudSync';
+import { applyThemeColors, DEFAULT_THEME_COLORS } from '../utils/themeEngine';
 import confetti from 'canvas-confetti';
 
 const StoreContext = createContext();
@@ -262,6 +263,12 @@ export const StoreProvider = ({ children }) => {
   useEffect(() => {
     resilientStorageSet(STORAGE_KEYS.WISHLIST, wishlist);
   }, [wishlist]);
+
+  // Dynamic Site Theme Application
+  useEffect(() => {
+    const activeColors = storeInfo?.themeColors || DEFAULT_THEME_COLORS;
+    applyThemeColors(activeColors);
+  }, [storeInfo?.themeColors]);
 
   // Admin Security Controls
   const loginAdmin = (enteredKey) => {
@@ -689,6 +696,34 @@ export const StoreProvider = ({ children }) => {
     showToast('Website Text Saved ✨', 'Storefront wording has been updated live!', 'success');
   };
 
+  // Site Colors & Dynamic Theme Management (Admin)
+  const updateThemeColors = (newColors) => {
+    const mergedColors = {
+      ...(storeInfo.themeColors || DEFAULT_THEME_COLORS),
+      ...newColors
+    };
+    const updatedInfo = {
+      ...storeInfo,
+      themeColors: mergedColors
+    };
+    setStoreInfo(updatedInfo);
+    applyThemeColors(mergedColors);
+    pushToCloud(products, updatedInfo);
+    showToast('Site Colors Live ✨', 'Your custom colors are now active across the website!', 'success');
+    return mergedColors;
+  };
+
+  const resetThemeColors = () => {
+    const updatedInfo = {
+      ...storeInfo,
+      themeColors: { ...DEFAULT_THEME_COLORS }
+    };
+    setStoreInfo(updatedInfo);
+    applyThemeColors(DEFAULT_THEME_COLORS);
+    pushToCloud(products, updatedInfo);
+    showToast('Palette Restored', 'Reset back to default Pink Burgundy Luxury theme.', 'info');
+  };
+
   // Reset to demo defaults
   const resetDemoData = () => {
     setProducts([]);
@@ -719,6 +754,9 @@ export const StoreProvider = ({ children }) => {
         storeInfo,
         updateStoreInfo,
         updateStoreText,
+        themeColors: storeInfo?.themeColors || DEFAULT_THEME_COLORS,
+        updateThemeColors,
+        resetThemeColors,
         orders,
         placeOrder,
         updateOrderStatus,

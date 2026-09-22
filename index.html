@@ -26,7 +26,30 @@
     <!-- Google Fonts: Editorial Serif & Modern Luxury Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+    <!-- Instant Theme Color Pre-Hydration (Prevents Flash of Unstyled Theme on Vercel) -->
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('fyw_store_info_v4_gh');
+          if (saved) {
+            var parsed = JSON.parse(saved);
+            var tc = parsed && parsed.themeColors;
+            if (tc) {
+              var r = document.documentElement;
+              if (tc.bgMain) {
+                r.style.setProperty('--bg-main', tc.bgMain);
+                document.body ? (document.body.style.backgroundColor = tc.bgMain) : (r.style.backgroundColor = tc.bgMain);
+              }
+              if (tc.primaryColor) r.style.setProperty('--color-wine', tc.primaryColor);
+              if (tc.secondaryColor) r.style.setProperty('--color-blush', tc.secondaryColor);
+              if (tc.textPrimary) r.style.setProperty('--color-cream', tc.textPrimary);
+              if (tc.navbarBg) r.style.setProperty('--navbar-bg', tc.navbarBg);
+              if (tc.announcementBg) r.style.setProperty('--announcement-bg', tc.announcementBg);
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

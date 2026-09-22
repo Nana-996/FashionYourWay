@@ -40,8 +40,8 @@ export const AdminStoreSettings = () => {
     location: storeInfo.location || 'Plot 24, Lagos Avenue, East Legon',
     city: storeInfo.city || 'Accra, Ghana',
     landmark: storeInfo.landmark || 'Near A&C Mall & Mensvic Grand Hotel',
-    phone: storeInfo.phone || '+233 54 892 4432',
-    whatsapp: storeInfo.whatsapp || '+233 55 901 8822',
+    phone: storeInfo.phone || '+233 59 656 8466',
+    whatsapp: storeInfo.whatsapp || '+233 59 656 8466',
     email: storeInfo.email || 'concierge@fashionyourway.com',
     workingHours: storeInfo.workingHours || 'Monday – Saturday: 9:00 AM – 8:00 PM (GMT) | Sunday: 12:00 PM – 6:00 PM',
     noticeBanner: storeInfo.noticeBanner || "✨ RUNWAY DROP: Enjoy Complimentary Delivery Across Ghana on Orders Over GH₵ 800 with code 'ACCRAVELVET'",
@@ -56,7 +56,7 @@ export const AdminStoreSettings = () => {
     socialHandles: {
       instagram: storeInfo.socialHandles?.instagram || storeInfo.instagram || 'fashionyourway_gh',
       tiktok: storeInfo.socialHandles?.tiktok || 'fashionyourway_gh',
-      whatsapp: storeInfo.socialHandles?.whatsapp || storeInfo.whatsapp || '+233559018822',
+      whatsapp: storeInfo.socialHandles?.whatsapp || storeInfo.whatsapp || '+233596568466',
       facebook: storeInfo.socialHandles?.facebook || 'FashionYourWayGhana',
       snapchat: storeInfo.socialHandles?.snapchat || 'fashionyourway',
       twitter: storeInfo.socialHandles?.twitter || 'fashionyourway'

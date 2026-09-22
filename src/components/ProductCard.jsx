@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStore } from '../context/StoreContext';
 import { Heart, Eye, ShoppingBag, Star } from 'lucide-react';
+import { WhatsAppIcon, getProductWhatsAppUrl } from '../utils/whatsapp';
 
 export const ProductCard = ({ product }) => {
   const { setSelectedProductDetail, addToCart, wishlist, toggleWishlist, formatCurrency } = useStore();
@@ -18,6 +19,10 @@ export const ProductCard = ({ product }) => {
     e.stopPropagation();
     toggleWishlist(product.id);
   };
+
+  const whatsappOrderUrl = getProductWhatsAppUrl(product, {
+    formattedPrice: formatCurrency(product.price)
+  });
 
   return (
     <div className="product-card" onClick={() => setSelectedProductDetail(product)}>
@@ -62,9 +67,36 @@ export const ProductCard = ({ product }) => {
             onClick={handleQuickAdd}
             style={{ width: '100%', gap: '8px' }}
           >
-            <ShoppingBag size={16} />
-            <span>Quick Add to Bag</span>
+            <ShoppingBag size={15} />
+            <span>Quick Add</span>
           </button>
+
+          <a
+            href={whatsappOrderUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              padding: '8px 12px',
+              borderRadius: 'var(--radius-full)',
+              background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+              color: '#FFFFFF',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              textDecoration: 'none',
+              boxShadow: '0 4px 12px rgba(37, 211, 102, 0.4)',
+              transition: 'transform 0.2s ease'
+            }}
+            title="Chat Admin & Pay Directly via WhatsApp (+233 59 656 8466)"
+          >
+            <WhatsAppIcon size={14} color="#FFFFFF" />
+            <span>WhatsApp & Pay</span>
+          </a>
         </div>
       </div>
 
@@ -120,6 +152,34 @@ export const ProductCard = ({ product }) => {
               : 'In Stock'}
           </div>
         </div>
+
+        {/* Dedicated WhatsApp Direct Order Link against every product */}
+        <a
+          href={whatsappOrderUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
+          style={{
+            marginTop: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '7px 12px',
+            borderRadius: '8px',
+            background: 'rgba(37, 211, 102, 0.1)',
+            border: '1px solid rgba(37, 211, 102, 0.35)',
+            color: '#86EFAC',
+            fontSize: '0.78rem',
+            fontWeight: 600,
+            textDecoration: 'none',
+            transition: 'all 0.2s ease'
+          }}
+          title="Inquire or Pay Directly via WhatsApp (+233 59 656 8466)"
+        >
+          <WhatsAppIcon size={14} color="#25D366" />
+          <span>WhatsApp / Pay Directly</span>
+        </a>
       </div>
     </div>
   );

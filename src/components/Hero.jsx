@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStore } from '../context/StoreContext';
 import { Sparkles, ArrowRight, Star } from 'lucide-react';
+import { WhatsAppIcon, getProductWhatsAppUrl } from '../utils/whatsapp';
 
 export const Hero = () => {
   const { storeInfo, setSelectedProductDetail, products, formatCurrency } = useStore();
@@ -76,9 +77,34 @@ export const Hero = () => {
               </div>
 
               <div className="hero-card-overlay">
-                <span className="badge badge-burgundy" style={{ width: 'fit-content' }}>
-                  {featuredProduct.category || 'Featured'}
-                </span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className="badge badge-burgundy" style={{ width: 'fit-content' }}>
+                    {featuredProduct.category || 'Featured'}
+                  </span>
+                  <a
+                    href={getProductWhatsAppUrl(featuredProduct, { formattedPrice: formatCurrency(featuredProduct.price) })}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+                      color: '#FFFFFF',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      padding: '4px 10px',
+                      borderRadius: '999px',
+                      textDecoration: 'none',
+                      boxShadow: '0 2px 8px rgba(37, 211, 102, 0.4)'
+                    }}
+                    title="Reach Admin & Pay via WhatsApp (+233 59 656 8466)"
+                  >
+                    <WhatsAppIcon size={13} color="#FFFFFF" />
+                    <span>WhatsApp / Pay</span>
+                  </a>
+                </div>
                 <h3 style={{ fontSize: '1.3rem', color: '#FFFFFF' }}>
                   {featuredProduct.name}
                 </h3>

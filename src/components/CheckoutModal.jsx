@@ -382,7 +382,7 @@ export const CheckoutModal = () => {
                     <span>Manual Mobile Money Transfer</span>
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'rgba(255, 240, 243, 0.7)' }}>
-                    Transfer directly to store MoMo number ({storeInfo.whatsapp || '+233 55 901 8822'})
+                    Transfer directly to store MoMo / WhatsApp hotline ({storeInfo.whatsapp || '+233 59 656 8466'})
                   </div>
                 </div>
 

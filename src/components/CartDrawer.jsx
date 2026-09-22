@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStore } from '../context/StoreContext';
 import { X, ShoppingBag, Trash2, ArrowRight, Sparkles, ShieldCheck } from 'lucide-react';
+import { WhatsAppIcon, getCartWhatsAppUrl, STORE_WHATSAPP_DISPLAY } from '../utils/whatsapp';
 
 export const CartDrawer = () => {
   const {
@@ -163,6 +164,36 @@ export const CartDrawer = () => {
               <span>Proceed to Checkout</span>
               <ArrowRight size={18} />
             </button>
+
+            <a
+              href={getCartWhatsAppUrl(
+                cart,
+                formatCurrency(cartSubtotal + (remainingForFreeShipping === 0 ? 0 : (storeInfo.standardShippingFee || 45)))
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn"
+              style={{
+                width: '100%',
+                marginTop: '8px',
+                background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+                color: '#FFFFFF',
+                borderRadius: 'var(--radius-full)',
+                padding: '12px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                fontWeight: 600,
+                fontSize: '0.88rem',
+                textDecoration: 'none',
+                boxShadow: '0 4px 14px rgba(37, 211, 102, 0.3)'
+              }}
+              title="Order Cart via WhatsApp (+233 59 656 8466)"
+            >
+              <WhatsAppIcon size={18} color="#FFFFFF" />
+              <span>Order & Pay via WhatsApp ({STORE_WHATSAPP_DISPLAY})</span>
+            </a>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.75rem', color: 'rgba(255, 240, 243, 0.5)' }}>
               <ShieldCheck size={14} color="#D4AF37" />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
 import { X, ShoppingBag, Zap, Heart, Star, Check, Sparkles, Ruler, Truck, ShieldCheck } from 'lucide-react';
+import { WhatsAppIcon, getProductWhatsAppUrl, STORE_WHATSAPP_DISPLAY } from '../utils/whatsapp';
 
 export const ProductDetailModal = () => {
   const {
@@ -271,6 +272,40 @@ export const ProductDetailModal = () => {
                 <Zap size={17} />
                 <span>Instant Direct Order & Checkout</span>
               </button>
+
+              {/* Direct WhatsApp Order & Pay button */}
+              <a
+                href={getProductWhatsAppUrl(product, {
+                  size: selectedSize,
+                  color: selectedColor,
+                  quantity,
+                  formattedPrice: formatCurrency(product.price * quantity)
+                })}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn"
+                style={{
+                  width: '100%',
+                  marginTop: '10px',
+                  background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+                  color: '#FFFFFF',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '13px 20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  fontWeight: 600,
+                  fontSize: '0.92rem',
+                  letterSpacing: '0.02em',
+                  textDecoration: 'none',
+                  boxShadow: '0 4px 16px rgba(37, 211, 102, 0.35)',
+                  transition: 'all 0.25s ease'
+                }}
+              >
+                <WhatsAppIcon size={19} color="#FFFFFF" />
+                <span>Reach Admin & Pay via WhatsApp ({STORE_WHATSAPP_DISPLAY})</span>
+              </a>
             </div>
 
             {/* Perks & Features */}

@@ -56,8 +56,8 @@ export const initialStoreInfo = {
   location: "Plot 24, Lagos Avenue, East Legon",
   city: "Accra, Ghana",
   landmark: "Near A&C Mall & Mensvic Grand Hotel",
-  phone: "+233 54 892 4432",
-  whatsapp: "+233 55 901 8822",
+  phone: "+233 59 656 8466",
+  whatsapp: "+233 59 656 8466",
   email: "concierge@fashionyourway.com",
   orderInquiriesEmail: "orders@fashionyourway.com",
   workingHours: "Monday – Saturday: 9:00 AM – 8:00 PM (GMT) | Sunday: 12:00 PM – 6:00 PM",
@@ -66,7 +66,7 @@ export const initialStoreInfo = {
   socialHandles: {
     instagram: "fashionyourway_gh",
     tiktok: "fashionyourway_gh",
-    whatsapp: "+233559018822",
+    whatsapp: "+233596568466",
     facebook: "FashionYourWayGhana",
     snapchat: "fashionyourway",
     twitter: "fashionyourway"

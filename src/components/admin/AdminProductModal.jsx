@@ -75,8 +75,8 @@ export const AdminProductModal = ({ productToEdit, onClose }) => {
 
     setCompressingIdx(index);
     try {
-      // Compress smartphone photo (from 5-12MB to <100KB WebP/JPEG)
-      const compressedDataUrl = await compressImage(file, 1000, 1200, 0.82);
+      // Compress smartphone photo (from 5-12MB to <40KB crisp WebP/JPEG)
+      const compressedDataUrl = await compressImage(file, 800, 1000, 0.75);
       handleImageChange(index, compressedDataUrl);
       showToast('Photo Optimized ✨', 'Image compressed for fast loading', 'info');
     } catch (err) {

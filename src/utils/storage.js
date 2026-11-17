@@ -106,7 +106,7 @@ export const syncStorageGet = (key, defaultValue = null) => {
  * If LocalStorage exceeds quota, it gracefully persists to IndexedDB without crashing.
  */
 export const resilientStorageSet = (key, value) => {
-  // Always mirror asynchronously to IndexedDB
+  // Always mirror asynchronously to IndexedDB (unlimited quota)
   idbSet(key, value).catch(() => {});
 
   // Try LocalStorage
@@ -115,11 +115,34 @@ export const resilientStorageSet = (key, value) => {
     return true;
   } catch (e) {
     if (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014) {
-      console.warn(`LocalStorage quota exceeded for "${key}". Data safely saved in IndexedDB!`);
-      // Try to clean up any obsolete legacy keys
+      console.warn(`LocalStorage quota reached for "${key}". Safely persisting to IndexedDB.`);
+      // Clean up old legacy keys
       try {
-        ['fyw_products_v1', 'fyw_products_v2', 'fyw_products_v3_gh'].forEach(k => localStorage.removeItem(k));
+        [
+          'fyw_products_v1',
+          'fyw_products_v2',
+          'fyw_products_v3_gh',
+          'fyw_products_catalog_v5',
+          'fyw_products_catalog_v6'
+        ].forEach(k => localStorage.removeItem(k));
       } catch {}
+
+      // If array of products, try storing lightweight version in localStorage
+      if (Array.isArray(value)) {
+        try {
+          const lightweight = value.map(item => {
+            if (item && item.images && Array.isArray(item.images)) {
+              // Strip massive data URLs from localStorage copy; IndexedDB has full data
+              const compactImages = item.images.map(img => 
+                (typeof img === 'string' && img.length > 500) ? 'placeholder' : img
+              );
+              return { ...item, images: compactImages };
+            }
+            return item;
+          });
+          localStorage.setItem(key, JSON.stringify(lightweight));
+        } catch {}
+      }
     } else {
       console.error(`Storage write failed for "${key}":`, e);
     }

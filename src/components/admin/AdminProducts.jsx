@@ -27,7 +27,9 @@ export const AdminProducts = () => {
     importProducts,
     cloudSyncStatus,
     lastCloudSyncTime,
+    cloudConfig,
     syncWithCloudNow,
+    setActiveAdminTab,
     setSelectedProductDetail,
     formatCurrency,
     showToast
@@ -117,15 +119,19 @@ export const AdminProducts = () => {
               backgroundColor:
                 cloudSyncStatus === 'syncing'
                   ? '#FBBF24'
-                  : cloudSyncStatus === 'error'
+                  : cloudSyncStatus === 'error' || cloudSyncStatus === 'offline'
                   ? '#F87171'
-                  : '#86EFAC',
+                  : cloudConfig?.isConfigured && cloudSyncStatus === 'synced'
+                  ? '#86EFAC'
+                  : '#FDE047',
               boxShadow:
                 cloudSyncStatus === 'syncing'
                   ? '0 0 10px #FBBF24'
-                  : cloudSyncStatus === 'error'
+                  : cloudSyncStatus === 'error' || cloudSyncStatus === 'offline'
                   ? '0 0 10px #F87171'
-                  : '0 0 10px #86EFAC',
+                  : cloudConfig?.isConfigured && cloudSyncStatus === 'synced'
+                  ? '0 0 10px #86EFAC'
+                  : '0 0 10px #FDE047',
               flexShrink: 0
             }}
           />
@@ -134,30 +140,55 @@ export const AdminProducts = () => {
               <span>
                 {cloudSyncStatus === 'syncing'
                   ? 'Global Cloud: Synchronizing...'
-                  : cloudSyncStatus === 'error'
-                  ? 'Global Cloud: Reconnecting (Saved Locally)'
-                  : 'Global Cloud: Connected & Synced Worldwide'}
+                  : cloudSyncStatus === 'error' || cloudSyncStatus === 'offline'
+                  ? 'Cloud Offline (Saved Safely on this Device)'
+                  : cloudConfig?.isConfigured && cloudSyncStatus === 'synced'
+                  ? 'Global Cloud: Connected & Synced Worldwide'
+                  : 'Local Storage Active (Edits Saved Safely on Device)'}
               </span>
             </div>
             <div style={{ fontSize: '0.78rem', color: 'rgba(255, 240, 243, 0.75)' }}>
               {cloudSyncStatus === 'syncing'
                 ? 'Uploading your latest store pieces to all visitors across the globe...'
-                : lastCloudSyncTime
+                : cloudConfig?.isConfigured && lastCloudSyncTime
                 ? `Active worldwide. Every visitor across any device sees your live products (${products.length} live).`
-                : 'All additions and edits automatically sync live to all customers across any device.'}
+                : cloudConfig?.isConfigured
+                ? 'All additions and edits automatically sync live to all customers across any device.'
+                : 'Connect Free Firebase Database in Cloud Settings to automatically share catalog edits across all devices.'}
             </div>
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {cloudConfig?.isConfigured ? (
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={syncWithCloudNow}
+              style={{ gap: '6px' }}
+              title="Force immediate synchronization with global live storefront"
+            >
+              <RefreshCw size={14} className={cloudSyncStatus === 'syncing' ? 'spin' : ''} />
+              <span>{cloudSyncStatus === 'syncing' ? 'Syncing...' : 'Sync with Live Site'}</span>
+            </button>
+          ) : (
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => setActiveAdminTab('cloud')}
+              style={{ gap: '6px' }}
+            >
+              <Globe size={14} />
+              <span>Connect Multi-Device Cloud</span>
+            </button>
+          )}
+
           <button
             className="btn btn-secondary btn-sm"
-            onClick={syncWithCloudNow}
+            onClick={() => setActiveAdminTab('cloud')}
             style={{ gap: '6px' }}
-            title="Force immediate synchronization with global live storefront"
+            title="Configure Cloud & Multi-Device Sync settings"
           >
-            <RefreshCw size={14} className={cloudSyncStatus === 'syncing' ? 'spin' : ''} />
-            <span>{cloudSyncStatus === 'syncing' ? 'Syncing...' : 'Sync with Live Site'}</span>
+            <Globe size={14} />
+            <span>Cloud Settings</span>
           </button>
 
           <button

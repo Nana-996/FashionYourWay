@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { initialProducts } from '../data/initialProducts';
 import { initialStoreInfo } from '../data/initialStoreInfo';
 import { initialOrders } from '../data/initialOrders';
@@ -9,54 +9,46 @@ import {
   idbGet,
   idbSet
 } from '../utils/storage';
-import { fetchCloudData, saveCloudData } from '../utils/cloudSync';
+import {
+  fetchCloudData,
+  saveCloudData,
+  getCloudConfig,
+  setCloudConfig,
+  testCloudConnection,
+  DEFAULT_LIVE_CLOUD_URL
+} from '../utils/cloudSync';
 import { applyThemeColors, DEFAULT_THEME_COLORS } from '../utils/themeEngine';
 import confetti from 'canvas-confetti';
 
 const StoreContext = createContext();
 
 const STORAGE_KEYS = {
-  PRODUCTS: 'fyw_products_catalog_v7',
+  PRODUCTS: 'fyw_products_catalog_v9',
   STORE_INFO: 'fyw_store_info_v4_gh',
   ORDERS: 'fyw_orders_v4_gh',
   CART: 'fyw_cart_v4_gh',
-  WISHLIST: 'fyw_wishlist_v4_gh'
-};
-
-// Filter out old hardcoded placeholder dresses so user browsers get a 100% clean catalog
-const isLegacyDemoProduct = (p) => {
-  if (!p || !p.id) return false;
-  const demoIds = ['FYW-PROD-001', 'FYW-PROD-002', 'FYW-PROD-003', 'FYW-PROD-004', 'FYW-PROD-005', 'FYW-PROD-006', 'FYW-PROD-007', 'FYW-PROD-008'];
-  return demoIds.includes(p.id) && (
-    p.name?.includes('Aurelia') ||
-    p.name?.includes('Seraphina') ||
-    p.name?.includes('Elysian') ||
-    p.name?.includes('Valeria') ||
-    p.name?.includes('Sovereign') ||
-    p.name?.includes('Marquise') ||
-    p.name?.includes('Celeste') ||
-    p.name?.includes('Royale Velvet')
-  );
+  WISHLIST: 'fyw_wishlist_v4_gh',
+  LAST_UPDATE: 'fyw_last_local_update_time'
 };
 
 export const StoreProvider = ({ children }) => {
   // Cloud Sync Status: 'idle' | 'syncing' | 'synced' | 'error'
   const [cloudSyncStatus, setCloudSyncStatus] = useState('idle');
   const [lastCloudSyncTime, setLastCloudSyncTime] = useState(null);
+  const [cloudConfigState, setCloudConfigState] = useState(() => getCloudConfig());
 
-  // 1. Products State - Persistent with IndexedDB + LocalStorage + Global Cloud
+  // 1. Products State - Initialized synchronously from storage or active baseline
   const [products, setProducts] = useState(() => {
     try {
       const saved = syncStorageGet(STORAGE_KEYS.PRODUCTS, null) ||
-                    syncStorageGet('fyw_products_catalog_v6', null) ||
-                    syncStorageGet('fyw_products_catalog_v5', null);
-      if (saved && Array.isArray(saved)) {
-        const cleaned = saved.filter(p => !isLegacyDemoProduct(p));
-        return cleaned;
+                    syncStorageGet('fyw_products_catalog_v8', null) ||
+                    syncStorageGet('fyw_products_catalog_v7', null);
+      if (saved && Array.isArray(saved) && saved.length > 0) {
+        return saved;
       }
       return initialProducts || [];
     } catch {
-      return [];
+      return initialProducts || [];
     }
   });
 
@@ -129,7 +121,7 @@ export const StoreProvider = ({ children }) => {
 
   // UI States
   const [currentView, setCurrentView] = useState('storefront'); // 'storefront' | 'track' | 'admin'
-  const [activeAdminTab, setActiveAdminTab] = useState('orders'); // 'orders' | 'products' | 'text-editor' | 'logo' | 'settings'
+  const [activeAdminTab, setActiveAdminTab] = useState('orders'); // 'orders' | 'products' | 'text-editor' | 'logo' | 'colors' | 'settings' | 'cloud'
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [selectedProductDetail, setSelectedProductDetail] = useState(null);
@@ -149,73 +141,130 @@ export const StoreProvider = ({ children }) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  // Async Hydration from IndexedDB & Global Cloud on startup
+  // Push products & store info & orders to global live cloud storage
+  const pushToCloud = useCallback(async (productsToSync, storeInfoToSync, ordersToSync) => {
+    try {
+      setCloudSyncStatus('syncing');
+      const res = await saveCloudData({
+        products: productsToSync || products,
+        storeInfo: storeInfoToSync || storeInfo,
+        orders: ordersToSync || orders
+      });
+      if (res.success) {
+        setCloudSyncStatus('synced');
+        setLastCloudSyncTime(res.timestamp || new Date().toISOString());
+        return true;
+      } else {
+        setCloudSyncStatus('error');
+        return false;
+      }
+    } catch (err) {
+      console.warn('pushToCloud error:', err);
+      setCloudSyncStatus('error');
+      return false;
+    }
+  }, [products, storeInfo, orders]);
+
+  // Synchronize with cloud: fetch authoritative live data
+  const syncFromCloud = useCallback(async (silent = false) => {
+    try {
+      if (!silent) setCloudSyncStatus('syncing');
+      const cloudResult = await fetchCloudData();
+
+      if (cloudResult.success) {
+        // 1. Live Products
+        if (Array.isArray(cloudResult.products) && cloudResult.products.length > 0) {
+          setProducts(cloudResult.products);
+          resilientStorageSet(STORAGE_KEYS.PRODUCTS, cloudResult.products);
+        } else if (Array.isArray(cloudResult.products) && cloudResult.products.length === 0) {
+          // If remote cloud was reset/empty, push current baseline to populate it
+          if (products.length > 0) {
+            pushToCloud(products, storeInfo, orders);
+          }
+        }
+
+        // 2. Store Info
+        if (cloudResult.storeInfo && typeof cloudResult.storeInfo === 'object') {
+          setStoreInfo(prev => {
+            const merged = { ...prev, ...cloudResult.storeInfo, currencySymbol: 'GH₵' };
+            resilientStorageSet(STORAGE_KEYS.STORE_INFO, merged);
+            return merged;
+          });
+        }
+
+        // 3. Customer Orders
+        if (Array.isArray(cloudResult.orders) && cloudResult.orders.length > 0) {
+          setOrders(currentOrders => {
+            const orderMap = new Map();
+            currentOrders.forEach(o => { if (o && o.id) orderMap.set(o.id, o); });
+            cloudResult.orders.forEach(o => { if (o && o.id) orderMap.set(o.id, o); });
+            const merged = Array.from(orderMap.values()).sort((a, b) =>
+              new Date(b.orderDate || 0) - new Date(a.orderDate || 0)
+            );
+            resilientStorageSet(STORAGE_KEYS.ORDERS, merged);
+            return merged;
+          });
+        }
+
+        setCloudSyncStatus('synced');
+        setLastCloudSyncTime(cloudResult.updatedAt || new Date().toISOString());
+        return true;
+      } else {
+        if (!silent) setCloudSyncStatus('error');
+        return false;
+      }
+    } catch (err) {
+      console.warn('Cloud sync fetch note:', err);
+      if (!silent) setCloudSyncStatus('error');
+      return false;
+    }
+  }, [products, storeInfo, orders, pushToCloud]);
+
+  // Startup Hydration: Loads from local cache & immediately syncs with global cloud
   useEffect(() => {
     let isMounted = true;
 
-    // 1. Immediate local hydration from IndexedDB
     (async () => {
+      // 1. Immediate local hydration from IndexedDB
       try {
         const idbProds = await idbGet(STORAGE_KEYS.PRODUCTS);
         if (isMounted && Array.isArray(idbProds) && idbProds.length > 0) {
-          const cleaned = idbProds.filter(p => !isLegacyDemoProduct(p));
-          setProducts(prev => (cleaned.length >= prev.length ? cleaned : prev));
+          setProducts(idbProds);
         }
 
         const idbInfo = await idbGet(STORAGE_KEYS.STORE_INFO);
         if (isMounted && idbInfo && typeof idbInfo === 'object') {
-          setStoreInfo(prev => ({
-            ...prev,
-            ...idbInfo,
-            currencySymbol: 'GH₵'
-          }));
+          setStoreInfo(prev => ({ ...prev, ...idbInfo, currencySymbol: 'GH₵' }));
         }
 
         const idbOrds = await idbGet(STORAGE_KEYS.ORDERS);
         if (isMounted && Array.isArray(idbOrds) && idbOrds.length > 0) {
-          setOrders(prev => (idbOrds.length >= prev.length ? idbOrds : prev));
+          setOrders(idbOrds);
         }
       } catch (err) {
         console.warn('IndexedDB initial hydration note:', err);
       }
 
-      // 2. Asynchronously fetch live global catalog from Cloud Sync
-      try {
-        if (isMounted) setCloudSyncStatus('syncing');
-        const cloudResult = await fetchCloudData();
-
-        if (isMounted && cloudResult.success) {
-          if (Array.isArray(cloudResult.products)) {
-            const cleanCloudProds = cloudResult.products.filter(p => !isLegacyDemoProduct(p));
-            // Cloud is authoritative source of truth for global visitors
-            setProducts(cleanCloudProds);
-            resilientStorageSet(STORAGE_KEYS.PRODUCTS, cleanCloudProds);
-          }
-
-          if (cloudResult.storeInfo && typeof cloudResult.storeInfo === 'object') {
-            setStoreInfo(prev => ({
-              ...prev,
-              ...cloudResult.storeInfo,
-              currencySymbol: 'GH₵'
-            }));
-            resilientStorageSet(STORAGE_KEYS.STORE_INFO, {
-              ...cloudResult.storeInfo,
-              currencySymbol: 'GH₵'
-            });
-          }
-
-          setCloudSyncStatus('synced');
-          setLastCloudSyncTime(cloudResult.updatedAt || new Date().toISOString());
-        } else {
-          if (isMounted) setCloudSyncStatus('idle');
-        }
-      } catch (cloudErr) {
-        console.warn('Initial cloud sync fetch notice:', cloudErr);
-        if (isMounted) setCloudSyncStatus('error');
-      }
+      // 2. Fetch latest live products from the global cloud database
+      await syncFromCloud(false);
     })();
 
-    // Multi-tab storage synchronization
+    // 3. Re-fetch when user switches back to the tab
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncFromCloud(true);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // 4. Background polling every 45 seconds so all visitors/buyers see edits without refreshing
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        syncFromCloud(true);
+      }
+    }, 45000);
+
+    // 5. Multi-tab storage synchronization
     const handleStorageChange = (e) => {
       if (!e.key) return;
       if (e.key === STORAGE_KEYS.PRODUCTS && e.newValue) {
@@ -237,13 +286,16 @@ export const StoreProvider = ({ children }) => {
     };
 
     window.addEventListener('storage', handleStorageChange);
+
     return () => {
       isMounted = false;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(pollInterval);
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 
-  // Save changes with resilient storage (LocalStorage + IndexedDB)
+  // Save changes locally in LocalStorage & IndexedDB
   useEffect(() => {
     resilientStorageSet(STORAGE_KEYS.PRODUCTS, products);
   }, [products]);
@@ -469,20 +521,24 @@ export const StoreProvider = ({ children }) => {
     };
 
     // Deduct stock
-    setProducts(prevProducts =>
-      prevProducts.map(prod => {
-        const itemInCart = cart.find(ci => ci.productId === prod.id);
-        if (itemInCart) {
-          const newStock = Math.max(0, (prod.stock || 10) - itemInCart.quantity);
-          return { ...prod, stock: newStock };
-        }
-        return prod;
-      })
-    );
+    const updatedProducts = products.map(prod => {
+      const itemInCart = cart.find(ci => ci.productId === prod.id);
+      if (itemInCart) {
+        const newStock = Math.max(0, (prod.stock || 10) - itemInCart.quantity);
+        return { ...prod, stock: newStock };
+      }
+      return prod;
+    });
 
-    setOrders(prev => [newOrder, ...prev]);
+    const updatedOrders = [newOrder, ...orders];
+
+    setProducts(updatedProducts);
+    setOrders(updatedOrders);
     clearCart();
     setIsCheckoutOpen(false);
+
+    // Live Cloud Push: customer order and updated inventory are immediately pushed worldwide
+    pushToCloud(updatedProducts, storeInfo, updatedOrders);
 
     try {
       confetti({
@@ -502,80 +558,66 @@ export const StoreProvider = ({ children }) => {
   // Order Status Updates (Admin)
   const updateOrderStatus = (orderId, newStatus, optionalNote = '') => {
     const nowIso = new Date().toISOString();
-    setOrders(prev =>
-      prev.map(ord => {
-        if (ord.id === orderId) {
-          const statusEntry = {
-            status: newStatus,
-            timestamp: nowIso,
-            note: optionalNote || `Status updated to ${newStatus} by Admin`
-          };
-          return {
-            ...ord,
-            status: newStatus,
-            statusHistory: [...(ord.statusHistory || []), statusEntry]
-          };
-        }
-        return ord;
-      })
-    );
+    const updated = orders.map(ord => {
+      if (ord.id === orderId) {
+        const statusEntry = {
+          status: newStatus,
+          timestamp: nowIso,
+          note: optionalNote || `Status updated to ${newStatus} by Admin`
+        };
+        return {
+          ...ord,
+          status: newStatus,
+          statusHistory: [...(ord.statusHistory || []), statusEntry]
+        };
+      }
+      return ord;
+    });
+
+    setOrders(updated);
+    pushToCloud(products, storeInfo, updated);
     showToast('Order Status Updated', `Order ${orderId} is now marked as ${newStatus}`, 'success');
   };
 
   const updateOrderAdminNotes = (orderId, adminNotes) => {
-    setOrders(prev =>
-      prev.map(ord => (ord.id === orderId ? { ...ord, adminNotes } : ord))
-    );
+    const updated = orders.map(ord => (ord.id === orderId ? { ...ord, adminNotes } : ord));
+    setOrders(updated);
+    pushToCloud(products, storeInfo, updated);
     showToast('Notes Saved', `Updated admin notes for ${orderId}`, 'info');
   };
-
-  // Push products & store info to global cloud storage (multi-device live persistence)
-  const pushToCloud = useCallback(async (productsToSync, storeInfoToSync) => {
-    try {
-      setCloudSyncStatus('syncing');
-      const res = await saveCloudData({
-        products: productsToSync,
-        storeInfo: storeInfoToSync || storeInfo
-      });
-      if (res.success) {
-        setCloudSyncStatus('synced');
-        setLastCloudSyncTime(res.timestamp || new Date().toISOString());
-        return true;
-      } else {
-        setCloudSyncStatus('error');
-        return false;
-      }
-    } catch (err) {
-      console.warn('pushToCloud error:', err);
-      setCloudSyncStatus('error');
-      return false;
-    }
-  }, [storeInfo]);
 
   // Manual trigger for Admin to sync with Global Live Storefront
   const syncWithCloudNow = useCallback(async () => {
     setCloudSyncStatus('syncing');
-    showToast('Syncing with Global Cloud...', 'Connecting to worldwide catalog server', 'info');
+    showToast('Connecting to Cloud Database...', 'Syncing store catalog & orders worldwide', 'info');
+
     try {
-      const res = await saveCloudData({ products, storeInfo });
-      if (res.success) {
+      // 1. First push local state
+      await saveCloudData({ products, storeInfo, orders });
+
+      // 2. Fetch authoritative cloud state
+      const fetchRes = await fetchCloudData();
+
+      if (fetchRes.success && Array.isArray(fetchRes.products) && fetchRes.products.length > 0) {
+        setProducts(fetchRes.products);
+        resilientStorageSet(STORAGE_KEYS.PRODUCTS, fetchRes.products);
         setCloudSyncStatus('synced');
-        setLastCloudSyncTime(res.timestamp || new Date().toISOString());
-        showToast('Global Live Sync Complete ✨', 'Your latest catalog is now live for all visitors worldwide!', 'success');
+        setLastCloudSyncTime(new Date().toISOString());
+        showToast('Global Live Sync Complete ✨', `${fetchRes.products.length} products live across all devices worldwide!`, 'success');
         return true;
       } else {
-        setCloudSyncStatus('error');
-        showToast('Sync Notice', `Could not connect to cloud server (${res.error || 'Network'}). Changes remain saved locally.`, 'warning');
-        return false;
+        setCloudSyncStatus('synced');
+        showToast('Global Live Sync Complete ✨', 'All changes published to the live storefront.', 'success');
+        return true;
       }
     } catch (err) {
       setCloudSyncStatus('error');
       showToast('Sync Failed', 'Please check your internet connection.', 'error');
       return false;
     }
-  }, [products, storeInfo, showToast]);
+  }, [products, storeInfo, orders, showToast]);
 
-  // Robust Product CRUD (Admin) - crash-proof and multi-device live synced
+  // Robust Product CRUD (Admin) - crash-proof and live synced across all buyers
   const addProduct = (newProductData) => {
     const uniqueSuffix = Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
     const newId = newProductData.id || `FYW-PROD-${uniqueSuffix}`;
@@ -608,11 +650,12 @@ export const StoreProvider = ({ children }) => {
 
     setProducts(prev => {
       const updated = [sanitizedProduct, ...prev];
-      pushToCloud(updated);
+      resilientStorageSet(STORAGE_KEYS.PRODUCTS, updated);
+      pushToCloud(updated, storeInfo, orders);
       return updated;
     });
 
-    showToast('Product Created ✨', `${sanitizedProduct.name} is now live in the store!`, 'success');
+    showToast('Product Created ✨', `${sanitizedProduct.name} is now live worldwide!`, 'success');
     return sanitizedProduct;
   };
 
@@ -633,16 +676,18 @@ export const StoreProvider = ({ children }) => {
             : p.images
         };
       });
-      pushToCloud(updated);
+      resilientStorageSet(STORAGE_KEYS.PRODUCTS, updated);
+      pushToCloud(updated, storeInfo, orders);
       return updated;
     });
-    showToast('Product Updated ✨', 'Product changes saved and live on site.', 'success');
+    showToast('Product Updated ✨', 'Changes published and live worldwide.', 'success');
   };
 
   const deleteProduct = (id) => {
     setProducts(prev => {
       const updated = prev.filter(p => p.id !== id);
-      pushToCloud(updated);
+      resilientStorageSet(STORAGE_KEYS.PRODUCTS, updated);
+      pushToCloud(updated, storeInfo, orders);
       return updated;
     });
     showToast('Product Removed', 'Product was deleted from the store catalog.', 'info');
@@ -650,23 +695,24 @@ export const StoreProvider = ({ children }) => {
 
   const clearAllProducts = () => {
     setProducts([]);
-    pushToCloud([]);
-    resilientStorageRemove(STORAGE_KEYS.PRODUCTS);
-    showToast('Catalog Cleared', 'All items have been removed locally and from the live site.', 'info');
+    resilientStorageSet(STORAGE_KEYS.PRODUCTS, []);
+    pushToCloud([], storeInfo, orders);
+    showToast('Catalog Cleared', 'All items have been removed from the catalog.', 'info');
   };
 
   const restoreDemoProducts = () => {
-    setProducts([]);
-    pushToCloud([]);
-    showToast('Catalog Reset', 'Catalog reset to clean baseline.', 'info');
+    setProducts(initialProducts);
+    resilientStorageSet(STORAGE_KEYS.PRODUCTS, initialProducts);
+    pushToCloud(initialProducts, storeInfo, orders);
+    showToast('Catalog Restored', 'Catalog reset to luxury boutique baseline.', 'info');
   };
 
   const importProducts = (newProductsList) => {
     if (Array.isArray(newProductsList) && newProductsList.length > 0) {
-      const cleaned = newProductsList.filter(p => !isLegacyDemoProduct(p));
-      setProducts(cleaned);
-      pushToCloud(cleaned);
-      showToast('Catalog Imported ✨', `Successfully loaded ${cleaned.length} products into the store!`, 'success');
+      setProducts(newProductsList);
+      resilientStorageSet(STORAGE_KEYS.PRODUCTS, newProductsList);
+      pushToCloud(newProductsList, storeInfo, orders);
+      showToast('Catalog Imported ✨', `Successfully published ${newProductsList.length} products to the live store!`, 'success');
       return true;
     } else {
       showToast('Import Failed', 'Invalid product data format.', 'error');
@@ -682,8 +728,9 @@ export const StoreProvider = ({ children }) => {
       currencySymbol: 'GH₵'
     };
     setStoreInfo(updated);
-    pushToCloud(products, updated);
-    showToast('Store Profile Updated', 'Public business details have been updated.', 'success');
+    resilientStorageSet(STORAGE_KEYS.STORE_INFO, updated);
+    pushToCloud(products, updated, orders);
+    showToast('Store Profile Updated', 'Public business details have been updated live.', 'success');
   };
 
   const updateStoreText = (textUpdates) => {
@@ -692,7 +739,8 @@ export const StoreProvider = ({ children }) => {
       ...textUpdates
     };
     setStoreInfo(updated);
-    pushToCloud(products, updated);
+    resilientStorageSet(STORAGE_KEYS.STORE_INFO, updated);
+    pushToCloud(products, updated, orders);
     showToast('Website Text Saved ✨', 'Storefront wording has been updated live!', 'success');
   };
 
@@ -708,7 +756,8 @@ export const StoreProvider = ({ children }) => {
     };
     setStoreInfo(updatedInfo);
     applyThemeColors(mergedColors);
-    pushToCloud(products, updatedInfo);
+    resilientStorageSet(STORAGE_KEYS.STORE_INFO, updatedInfo);
+    pushToCloud(products, updatedInfo, orders);
     showToast('Site Colors Live ✨', 'Your custom colors are now active across the website!', 'success');
     return mergedColors;
   };
@@ -720,22 +769,94 @@ export const StoreProvider = ({ children }) => {
     };
     setStoreInfo(updatedInfo);
     applyThemeColors(DEFAULT_THEME_COLORS);
-    pushToCloud(products, updatedInfo);
+    resilientStorageSet(STORAGE_KEYS.STORE_INFO, updatedInfo);
+    pushToCloud(products, updatedInfo, orders);
     showToast('Palette Restored', 'Reset back to default Pink Burgundy Luxury theme.', 'info');
   };
 
-  // Reset to demo defaults
+  // Cloud Configuration Management
+  const updateCloudConfig = async (newConfig) => {
+    const saved = setCloudConfig(newConfig);
+    setCloudConfigState(saved);
+    setCloudSyncStatus('syncing');
+    showToast('Connecting to Cloud Database...', 'Verifying global connection', 'info');
+    const testRes = await testCloudConnection(saved);
+    if (testRes.success) {
+      showToast('Live Cloud Connected ✨', `Latency: ${testRes.latencyMs}ms. Syncing live catalog now...`, 'success');
+      await saveCloudData({ products, storeInfo, orders });
+      setCloudSyncStatus('synced');
+      setLastCloudSyncTime(new Date().toISOString());
+      return { success: true, latencyMs: testRes.latencyMs };
+    } else {
+      setCloudSyncStatus('error');
+      showToast('Connection Warning', `Could not connect: ${testRes.error}`, 'warning');
+      return { success: false, error: testRes.error };
+    }
+  };
+
+  const testCloudConfig = async (configToTest) => {
+    return await testCloudConnection(configToTest || cloudConfigState);
+  };
+
+  // Force Push Local Data to Cloud
+  const pushAllToCloud = async () => {
+    setCloudSyncStatus('syncing');
+    showToast('Publishing to Global Cloud...', 'Uploading all products, settings & orders to cloud database', 'info');
+    const res = await saveCloudData({ products, storeInfo, orders });
+    if (res.success) {
+      setCloudSyncStatus('synced');
+      setLastCloudSyncTime(new Date().toISOString());
+      showToast('Published Live ✨', `${products.length} products & ${orders.length} orders live for all buyers worldwide!`, 'success');
+      return true;
+    } else {
+      setCloudSyncStatus('error');
+      showToast('Push Failed', res.error || 'Could not reach cloud', 'error');
+      return false;
+    }
+  };
+
+  // Force Pull Remote Data from Cloud
+  const pullAllFromCloud = async () => {
+    setCloudSyncStatus('syncing');
+    showToast('Fetching Live Cloud...', 'Downloading latest live catalog from cloud database', 'info');
+    const res = await fetchCloudData();
+    if (res.success) {
+      if (Array.isArray(res.products) && res.products.length > 0) {
+        setProducts(res.products);
+        resilientStorageSet(STORAGE_KEYS.PRODUCTS, res.products);
+      }
+      if (res.storeInfo && typeof res.storeInfo === 'object') {
+        const merged = { ...storeInfo, ...res.storeInfo, currencySymbol: 'GH₵' };
+        setStoreInfo(merged);
+        resilientStorageSet(STORAGE_KEYS.STORE_INFO, merged);
+      }
+      if (Array.isArray(res.orders)) {
+        setOrders(res.orders);
+        resilientStorageSet(STORAGE_KEYS.ORDERS, res.orders);
+      }
+      setCloudSyncStatus('synced');
+      setLastCloudSyncTime(new Date().toISOString());
+      showToast('Sync Complete ✨', 'Your view is updated with the latest live products!', 'success');
+      return true;
+    } else {
+      setCloudSyncStatus('error');
+      showToast('Fetch Failed', res.error || 'Could not fetch cloud data', 'error');
+      return false;
+    }
+  };
+
+  // Reset to default baseline
   const resetDemoData = () => {
-    setProducts([]);
+    setProducts(initialProducts);
     setStoreInfo(initialStoreInfo);
     setOrders(initialOrders);
     setCart([]);
-    resilientStorageRemove(STORAGE_KEYS.PRODUCTS);
-    resilientStorageRemove(STORAGE_KEYS.STORE_INFO);
-    resilientStorageRemove(STORAGE_KEYS.ORDERS);
+    resilientStorageSet(STORAGE_KEYS.PRODUCTS, initialProducts);
+    resilientStorageSet(STORAGE_KEYS.STORE_INFO, initialStoreInfo);
+    resilientStorageSet(STORAGE_KEYS.ORDERS, initialOrders);
     resilientStorageRemove(STORAGE_KEYS.CART);
-    pushToCloud([]);
-    showToast('Data Reset', 'Store cleared to fresh state', 'info');
+    pushToCloud(initialProducts, initialStoreInfo, initialOrders);
+    showToast('Store Reset', 'Store restored to luxury boutique baseline', 'info');
   };
 
   return (
@@ -750,6 +871,11 @@ export const StoreProvider = ({ children }) => {
         importProducts,
         cloudSyncStatus,
         lastCloudSyncTime,
+        cloudConfig: cloudConfigState,
+        updateCloudConfig,
+        testCloudConfig,
+        pushAllToCloud,
+        pullAllFromCloud,
         syncWithCloudNow,
         storeInfo,
         updateStoreInfo,

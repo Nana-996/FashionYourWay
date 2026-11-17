@@ -6,6 +6,7 @@ import { AdminContentEditor } from './AdminContentEditor';
 import { AdminStoreSettings } from './AdminStoreSettings';
 import { AdminLogoStudio } from './AdminLogoStudio';
 import { AdminColorStudio } from './AdminColorStudio';
+import { AdminCloudStudio } from './AdminCloudStudio';
 import { BrandLogo } from '../BrandLogo';
 import {
   ShoppingBag,
@@ -18,7 +19,8 @@ import {
   Lock,
   Sparkles,
   Type,
-  Palette
+  Palette,
+  Globe
 } from 'lucide-react';
 
 export const AdminDashboard = () => {
@@ -194,6 +196,14 @@ export const AdminDashboard = () => {
             <Settings size={17} />
             <span>Location & Contacts</span>
           </button>
+
+          <button
+            className={`admin-tab-btn ${activeAdminTab === 'cloud' ? 'active' : ''}`}
+            onClick={() => setActiveAdminTab('cloud')}
+          >
+            <Globe size={17} />
+            <span>Cloud & Multi-Device Sync</span>
+          </button>
         </div>
 
         {/* Active Tab View */}
@@ -204,6 +214,7 @@ export const AdminDashboard = () => {
           {activeAdminTab === 'logo' && <AdminLogoStudio />}
           {activeAdminTab === 'colors' && <AdminColorStudio />}
           {activeAdminTab === 'settings' && <AdminStoreSettings />}
+          {activeAdminTab === 'cloud' && <AdminCloudStudio />}
         </div>
       </div>
     </div>

@@ -18,7 +18,8 @@ import {
   Zap,
   ShieldCheck,
   CreditCard,
-  EyeOff
+  EyeOff,
+  Globe
 } from 'lucide-react';
 
 export const AdminStoreSettings = () => {
@@ -566,7 +567,45 @@ export const AdminStoreSettings = () => {
             </div>
           </div>
 
-          {/* Section 6: Admin Privacy & Security Passkey */}
+          {/* Section 6: Multi-Device Cloud Persistence */}
+          <div className="form-grid-full" style={{ marginTop: '20px' }}>
+            <div
+              style={{
+                background: 'rgba(232, 165, 152, 0.08)',
+                border: '1px solid rgba(232, 165, 152, 0.25)',
+                borderRadius: '12px',
+                padding: '16px 20px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '14px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Globe size={24} color="#E8A598" />
+                <div>
+                  <div style={{ fontWeight: 600, color: '#FFFFFF', fontSize: '0.94rem' }}>
+                    Multi-Device Cloud Synchronization
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'rgba(255, 240, 243, 0.7)' }}>
+                    Connect free Firebase or cloud database to keep catalog edits and customer orders synced across all devices.
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setActiveAdminTab('cloud')}
+                style={{ gap: '6px' }}
+              >
+                <Globe size={14} />
+                <span>Open Cloud & Live Sync Studio</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Section 7: Admin Privacy & Security Passkey */}
           <div className="form-grid-full" style={{ marginTop: '16px' }}>
             <div className="admin-settings-section-title">
               <KeyRound size={18} color="#D4AF37" />
